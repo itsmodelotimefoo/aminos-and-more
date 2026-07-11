@@ -9,9 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestingRouteImport } from './routes/testing'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
-import { Route as TestingRouteImport } from './routes/testing'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout-success'
 import { Route as CheckoutRouteImport } from './routes/checkout'
@@ -23,6 +23,11 @@ import { Route as ApiIpnRouteImport } from './routes/api.ipn'
 import { Route as ApiCheckoutRatesRouteImport } from './routes/api.checkout.rates'
 import { Route as ApiCheckoutCreateRouteImport } from './routes/api.checkout.create'
 
+const TestingRoute = TestingRouteImport.update({
+  id: '/testing',
+  path: '/testing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -31,11 +36,6 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TestingRoute = TestingRouteImport.update({
-  id: '/testing',
-  path: '/testing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinRoute = JoinRouteImport.update({
@@ -96,13 +96,13 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
-  '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/products/$slug': typeof ProductsSlugRoute
+  '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
-  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/products/$slug': typeof ProductsSlugRoute
   '/api/checkout/create': typeof ApiCheckoutCreateRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,13 +111,13 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
-  '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/products/$slug': typeof ProductsSlugRoute
+  '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
-  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/products/$slug': typeof ProductsSlugRoute
   '/api/checkout/create': typeof ApiCheckoutCreateRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,13 +127,13 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
-  '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/products/$slug': typeof ProductsSlugRoute
+  '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
-  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/products/$slug': typeof ProductsSlugRoute
   '/api/checkout/create': typeof ApiCheckoutCreateRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -144,13 +144,13 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/checkout-success'
     | '/join'
-    | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
-    | '/products/$slug'
+    | '/testing'
     | '/api/ipn'
-    | '/api/checkout/rates'
+    | '/products/$slug'
     | '/api/checkout/create'
+    | '/api/checkout/rates'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,13 +159,13 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/checkout-success'
     | '/join'
-    | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
-    | '/products/$slug'
+    | '/testing'
     | '/api/ipn'
-    | '/api/checkout/rates'
+    | '/products/$slug'
     | '/api/checkout/create'
+    | '/api/checkout/rates'
   id:
     | '__root__'
     | '/'
@@ -174,13 +174,13 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/checkout-success'
     | '/join'
-    | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
-    | '/products/$slug'
+    | '/testing'
     | '/api/ipn'
-    | '/api/checkout/rates'
+    | '/products/$slug'
     | '/api/checkout/create'
+    | '/api/checkout/rates'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,17 +190,24 @@ export interface RootRouteChildren {
   CheckoutRoute: typeof CheckoutRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   JoinRoute: typeof JoinRoute
-  TestingRoute: typeof TestingRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ProductsSlugRoute: typeof ProductsSlugRoute
+  TestingRoute: typeof TestingRoute
   ApiIpnRoute: typeof ApiIpnRoute
-  ApiCheckoutRatesRoute: typeof ApiCheckoutRatesRoute
+  ProductsSlugRoute: typeof ProductsSlugRoute
   ApiCheckoutCreateRoute: typeof ApiCheckoutCreateRoute
+  ApiCheckoutRatesRoute: typeof ApiCheckoutRatesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/testing': {
+      id: '/testing'
+      path: '/testing'
+      fullPath: '/testing'
+      preLoaderRoute: typeof TestingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -213,13 +220,6 @@ declare module '@tanstack/react-router' {
       path: '/robots.txt'
       fullPath: '/robots.txt'
       preLoaderRoute: typeof RobotsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/testing': {
-      id: '/testing'
-      path: '/testing'
-      fullPath: '/testing'
-      preLoaderRoute: typeof TestingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join': {
@@ -302,13 +302,13 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutRoute: CheckoutRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   JoinRoute: JoinRoute,
-  TestingRoute: TestingRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ProductsSlugRoute: ProductsSlugRoute,
+  TestingRoute: TestingRoute,
   ApiIpnRoute: ApiIpnRoute,
-  ApiCheckoutRatesRoute: ApiCheckoutRatesRoute,
+  ProductsSlugRoute: ProductsSlugRoute,
   ApiCheckoutCreateRoute: ApiCheckoutCreateRoute,
+  ApiCheckoutRatesRoute: ApiCheckoutRatesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

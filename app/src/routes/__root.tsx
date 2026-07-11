@@ -12,6 +12,7 @@ import { button } from "@higgsfield/quanta/button";
 import { NotFound } from "@higgsfield/quanta/not-found";
 
 import appCss from "../styles.css?url";
+import siteCss from "../site.css?url";
 import { reportHiggsfieldError } from "../lib/higgsfield-error-reporting";
 // Page metadata (browser <title>/favicon + social og: tags) committed into the
 // repo by the marketplace meta API and read at BUILD time — no runtime fetch.
@@ -95,6 +96,7 @@ function buildHead(meta: AppMeta) {
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "stylesheet", href: siteCss },
       ...(favicon ? [{ rel: "icon", href: favicon }] : []),
     ],
   };

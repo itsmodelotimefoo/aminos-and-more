@@ -217,6 +217,7 @@ export function SiteLayout({
 }) {
   return (
     <div className="am">
+      <div className="am-bg" aria-hidden="true" />
       <AgeGate />
       <Nav active={active} />
       {children}

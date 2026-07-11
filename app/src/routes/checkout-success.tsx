@@ -111,6 +111,10 @@ function Success() {
                 <span>Shipping</span>
                 <span>{formatUsd(o.shippingCents)}</span>
               </div>
+              <div className="co-row">
+                <span>Tax</span>
+                <span>{formatUsd(o.taxCents)}</span>
+              </div>
               <div className="co-row total">
                 <span>Total</span>
                 <span>{formatUsd(o.totalCents)}</span>

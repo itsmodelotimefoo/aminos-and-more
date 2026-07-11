@@ -14,6 +14,7 @@ export type OrderRow = {
   items_json: string;
   subtotal_cents: number;
   shipping_cents: number;
+  tax_cents: number;
   total_cents: number;
   certified_21: number;
   certified_researcher: number;
@@ -49,6 +50,7 @@ export type NewOrder = {
   items: CartLine[];
   subtotalCents: number;
   shippingCents: number;
+  taxCents: number;
   totalCents: number;
   certified21: boolean;
   certifiedResearcher: boolean;
@@ -67,15 +69,15 @@ export async function insertOrder(o: NewOrder): Promise<void> {
     .prepare(
       `INSERT INTO orders (
         id, created_at, updated_at, status, email, items_json,
-        subtotal_cents, shipping_cents, total_cents,
+        subtotal_cents, shipping_cents, tax_cents, total_cents,
         certified_21, certified_researcher,
         ship_name, ship_street1, ship_street2, ship_city, ship_state, ship_zip, ship_country, ship_phone,
         shippo_rate_id, ship_carrier, ship_service
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     )
     .bind(
       o.id, now, now, "pending", o.email, JSON.stringify(o.items),
-      o.subtotalCents, o.shippingCents, o.totalCents,
+      o.subtotalCents, o.shippingCents, o.taxCents, o.totalCents,
       o.certified21 ? 1 : 0, o.certifiedResearcher ? 1 : 0,
       o.ship.name, o.ship.street1, o.ship.street2, o.ship.city, o.ship.state, o.ship.zip, o.ship.country, o.ship.phone,
       o.shippoRateId, o.carrier, o.service,

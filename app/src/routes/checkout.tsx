@@ -8,6 +8,7 @@ import {
   type Address,
   type RateOption,
 } from "../lib/checkout";
+import { estimateTaxCents, taxRateFor } from "../lib/tax";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -44,7 +45,9 @@ function Checkout() {
 
   const subtotal = subtotalCents(lines);
   const chosen = rates?.find((r) => r.rateId === rateId) ?? null;
-  const total = subtotal + (chosen?.amountCents ?? 0);
+  const taxCents = estimateTaxCents(subtotal, addr.state, addr.country);
+  const taxRate = taxRateFor(addr.state, addr.country);
+  const total = subtotal + (chosen?.amountCents ?? 0) + taxCents;
 
   const addrComplete =
     addr.name && addr.street1 && addr.city && addr.state && addr.zip && addr.country;
@@ -297,6 +300,12 @@ function Checkout() {
                 <div className="co-row">
                   <span>Shipping</span>
                   <span>{chosen ? formatUsd(chosen.amountCents) : "—"}</span>
+                </div>
+                <div className="co-row">
+                  <span>
+                    Estimated tax{taxRate > 0 ? ` (${taxRate}%)` : ""}
+                  </span>
+                  <span>{taxCents > 0 ? formatUsd(taxCents) : "—"}</span>
                 </div>
                 <div className="co-row total">
                   <span>Total</span>

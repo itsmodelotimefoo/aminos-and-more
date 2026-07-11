@@ -25,6 +25,7 @@ export const getOrderStatus = createServerFn({ method: "GET" })
       totalCents: o.total_cents,
       subtotalCents: o.subtotal_cents,
       shippingCents: o.shipping_cents,
+      taxCents: o.tax_cents,
       carrier: o.ship_carrier,
       service: o.ship_service,
       tracking: o.tracking_number,

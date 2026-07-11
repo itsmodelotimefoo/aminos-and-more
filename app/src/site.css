@@ -12,9 +12,12 @@
 }
 
 html { scroll-behavior: smooth; }
-body.am,
+/* Base canvas on <body> so the fixed .am-bg flare (z-index:-1) shows through
+   the transparent .am wrapper above it. */
+body { background: var(--bg); }
 .am {
-  background: var(--bg);
+  position: relative;
+  background: transparent;
   color: var(--cream);
   font-family: "Inter", system-ui, sans-serif;
   line-height: 1.6;
@@ -34,6 +37,43 @@ body.am,
 .am .btn.ghost { background: transparent; border: 1px solid var(--line); color: var(--cream); }
 .am .btn.ghost:hover { border-color: var(--gold); color: var(--gold); }
 .am .btn:disabled { cursor: default; filter: none; transform: none; opacity: .85; }
+
+/* BACKGROUND FLARE — layered brand-color glows + fine grain, drifting slowly,
+   fixed behind all content. Reduced-motion safe. */
+.am-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(42% 34% at 14% 8%, rgba(201, 162, 75, 0.12), transparent 70%),
+    radial-gradient(38% 32% at 88% 16%, rgba(52, 102, 230, 0.08), transparent 72%),
+    radial-gradient(46% 42% at 72% 92%, rgba(192, 57, 43, 0.07), transparent 72%),
+    radial-gradient(40% 40% at 30% 80%, rgba(63, 163, 90, 0.05), transparent 72%);
+}
+.am-bg::before {
+  content: "";
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(30% 30% at 50% 40%, rgba(228, 200, 119, 0.06), transparent 70%);
+  animation: am-float 26s ease-in-out infinite alternate;
+}
+.am-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes am-float {
+  from { transform: translate3d(-4%, -3%, 0) scale(1); }
+  to   { transform: translate3d(5%, 4%, 0) scale(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .am-bg::before { animation: none; }
+}
 
 /* NAV */
 .am nav { position: sticky; top: 0; z-index: 50; background: rgba(10,10,12,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
@@ -126,6 +166,11 @@ body.am,
 .am .pdp .meta { border-top: 1px solid var(--line); margin-top: 24px; padding-top: 18px; font-size: 13px; color: var(--muted); display: grid; gap: 8px; }
 .am .pdp .meta b { color: var(--cream); font-weight: 600; }
 .am .flagnote { background: rgba(224,145,60,.08); border: 1px solid rgba(224,145,60,.35); color: #e0b48a; border-radius: 12px; padding: 14px 16px; font-size: 13px; margin: 8px 0 20px; }
+.am .qtyrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 4px 0 16px; }
+.am .qtystep { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; }
+.am .qtystep button { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--line); background: transparent; color: var(--cream); font-size: 18px; line-height: 1; cursor: pointer; }
+.am .qtystep button:hover { border-color: var(--accent); color: var(--accent); }
+.am .qtystep span { min-width: 24px; text-align: center; font-weight: 700; }
 .am .cartline { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 
 /* TESTING */

@@ -28,6 +28,7 @@ function ProductPage() {
   const p = getProduct(slug);
   const [sizeIdx, setSizeIdx] = useState(0);
   const [added, setAdded] = useState(false);
+  const [qty, setQty] = useState(1);
 
   if (!p) {
     return (
@@ -82,6 +83,33 @@ function ProductPage() {
               ))}
             </div>
 
+            <div className="qtyrow">
+              <span className="kicker">Quantity</span>
+              <div className="qtystep">
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => {
+                    setQty((q) => Math.max(1, q - 1));
+                    setAdded(false);
+                  }}
+                >
+                  −
+                </button>
+                <span>{qty}</span>
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => {
+                    setQty((q) => Math.min(99, q + 1));
+                    setAdded(false);
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
             <button
               type="button"
               className="btn"
@@ -92,7 +120,7 @@ function ProductPage() {
                   name: p.name,
                   size: p.sizes[sizeIdx][0],
                   unitCents: price * 100,
-                  qty: 1,
+                  qty,
                 });
                 setAdded(true);
               }}
@@ -101,8 +129,8 @@ function ProductPage() {
                 "Added to cart ✓"
               ) : (
                 <span className="cartline">
-                  <span>Add to cart</span>
-                  <span>${price}</span>
+                  <span>Add to cart{qty > 1 ? ` · ${qty}` : ""}</span>
+                  <span>${price * qty}</span>
                 </span>
               )}
             </button>

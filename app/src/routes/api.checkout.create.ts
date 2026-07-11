@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema, subtotalCents, type CartLine } from "../lib/checkout";
+import { estimateTaxCents } from "../lib/tax";
 import { getProduct } from "../lib/products";
 import { insertOrder, setInvoiceId } from "../lib/orders.server";
 import { createInvoice } from "../lib/nowpayments.server";
@@ -41,7 +42,8 @@ export const Route = createFileRoute("/api/checkout/create")({
         }
 
         const subtotal = subtotalCents(priced);
-        const total = subtotal + d.shippingCents;
+        const tax = estimateTaxCents(subtotal, d.address.state, d.address.country);
+        const total = subtotal + d.shippingCents + tax;
         const orderId = "AM-" + crypto.randomUUID().slice(0, 8).toUpperCase();
         const origin = new URL(request.url).origin;
 
@@ -52,6 +54,7 @@ export const Route = createFileRoute("/api/checkout/create")({
             items: priced,
             subtotalCents: subtotal,
             shippingCents: d.shippingCents,
+            taxCents: tax,
             totalCents: total,
             certified21: d.certified21,
             certifiedResearcher: d.certifiedResearcher,

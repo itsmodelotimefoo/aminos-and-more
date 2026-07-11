@@ -170,3 +170,45 @@ body.am,
 .am footer a:hover { color: var(--cream); }
 .am .agebadge { display: inline-block; border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; }
 .am .disc { border-top: 1px solid var(--line); margin-top: 34px; padding-top: 22px; font-size: 12px; line-height: 1.7; color: #6f6c77; }
+
+/* CHECKOUT */
+.am .co-empty { text-align: center; color: var(--muted); padding: 40px 0 60px; }
+.am .co-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: start; }
+@media (max-width: 860px) { .am .co-grid { grid-template-columns: 1fr; } }
+.am .co-h { font-family: "Anton", sans-serif; font-size: 20px; text-transform: uppercase; letter-spacing: .5px; margin: 30px 0 12px; }
+.am .co-lines { display: grid; gap: 2px; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.am .co-line { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 16px; padding: 16px 18px; background: var(--panel); }
+.am .co-name { font-weight: 700; }
+.am .co-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.am .co-qtywrap { display: flex; align-items: center; gap: 10px; }
+.am .co-qtywrap button { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--cream); font-size: 16px; cursor: pointer; line-height: 1; }
+.am .co-qtywrap button:hover { border-color: var(--gold); color: var(--gold); }
+.am .co-lineprice { font-family: "Anton", sans-serif; color: var(--gold); min-width: 70px; text-align: right; }
+.am .co-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+.am .co-remove:hover { color: var(--crimson); }
+.am .co-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.am .co-in { background: var(--panel); border: 1px solid var(--line); color: var(--cream); border-radius: 8px; padding: 13px 14px; font-size: 15px; font-family: inherit; width: 100%; }
+.am .co-in:focus { outline: none; border-color: var(--gold); }
+.am .co-in.wide { grid-column: 1 / -1; }
+@media (max-width: 500px) { .am .co-form { grid-template-columns: 1fr; } .am .co-in.wide { grid-column: auto; } }
+.am .co-hint { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.am .co-rates { margin-top: 8px; }
+.am .co-rate { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; }
+.am .co-rate.sel { border-color: var(--gold); background: rgba(201,162,75,.06); }
+.am .co-rate input { accent-color: var(--gold); }
+.am .co-rate-name { flex: 1; font-size: 14px; }
+.am .co-rate-price { font-family: "Anton", sans-serif; color: var(--gold); }
+.am .co-summary { position: sticky; top: 90px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.am .co-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 8px 0; color: var(--muted); font-size: 14px; }
+.am .co-row.total { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 14px; color: var(--cream); font-family: "Anton", sans-serif; font-size: 20px; }
+.am .co-row.total span:last-child { color: var(--gold); }
+.am .co-pay { font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+.am .co-error { color: #e88; font-size: 13px; margin-top: 12px; }
+.am .co-ruo { font-size: 11px; color: #6f6c77; margin-top: 14px; letter-spacing: .5px; text-transform: uppercase; }
+.am .co-note { color: var(--muted); }
+.am .co-badge { font-weight: 700; text-align: right; }
+.am .co-pending { color: var(--gold); }
+.am .co-paid { color: var(--gold); }
+.am .co-fulfilled { color: var(--green); }
+.am .co-failed { color: var(--crimson); }
+.am .co-expired { color: var(--muted); }

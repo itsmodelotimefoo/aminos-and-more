@@ -13,10 +13,15 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as TestingRouteImport } from './routes/testing'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout-success'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as ApiIpnRouteImport } from './routes/api.ipn'
+import { Route as ApiCheckoutRatesRouteImport } from './routes/api.checkout.rates'
+import { Route as ApiCheckoutCreateRouteImport } from './routes/api.checkout.create'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -36,6 +41,16 @@ const TestingRoute = TestingRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/checkout-success',
+  path: '/checkout-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -58,37 +73,67 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/products/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIpnRoute = ApiIpnRouteImport.update({
+  id: '/api/ipn',
+  path: '/api/ipn',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCheckoutRatesRoute = ApiCheckoutRatesRouteImport.update({
+  id: '/api/checkout/rates',
+  path: '/api/checkout/rates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCheckoutCreateRoute = ApiCheckoutCreateRouteImport.update({
+  id: '/api/checkout/create',
+  path: '/api/checkout/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
   '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/ipn': typeof ApiIpnRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/api/checkout/create': typeof ApiCheckoutCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
   '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/ipn': typeof ApiIpnRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/api/checkout/create': typeof ApiCheckoutCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/checkout-success': typeof CheckoutSuccessRoute
   '/join': typeof JoinRoute
   '/testing': typeof TestingRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/ipn': typeof ApiIpnRoute
+  '/api/checkout/rates': typeof ApiCheckoutRatesRoute
+  '/api/checkout/create': typeof ApiCheckoutCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,42 +141,62 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/catalog'
+    | '/checkout'
+    | '/checkout-success'
     | '/join'
     | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/products/$slug'
+    | '/api/ipn'
+    | '/api/checkout/rates'
+    | '/api/checkout/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/catalog'
+    | '/checkout'
+    | '/checkout-success'
     | '/join'
     | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/products/$slug'
+    | '/api/ipn'
+    | '/api/checkout/rates'
+    | '/api/checkout/create'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/catalog'
+    | '/checkout'
+    | '/checkout-success'
     | '/join'
     | '/testing'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/products/$slug'
+    | '/api/ipn'
+    | '/api/checkout/rates'
+    | '/api/checkout/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   CatalogRoute: typeof CatalogRoute
+  CheckoutRoute: typeof CheckoutRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   JoinRoute: typeof JoinRoute
   TestingRoute: typeof TestingRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ApiIpnRoute: typeof ApiIpnRoute
+  ApiCheckoutRatesRoute: typeof ApiCheckoutRatesRoute
+  ApiCheckoutCreateRoute: typeof ApiCheckoutCreateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,6 +229,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout-success': {
+      id: '/checkout-success'
+      path: '/checkout-success'
+      fullPath: '/checkout-success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/catalog': {
       id: '/catalog'
       path: '/catalog'
@@ -192,6 +271,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ipn': {
+      id: '/api/ipn'
+      path: '/api/ipn'
+      fullPath: '/api/ipn'
+      preLoaderRoute: typeof ApiIpnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/checkout/rates': {
+      id: '/api/checkout/rates'
+      path: '/api/checkout/rates'
+      fullPath: '/api/checkout/rates'
+      preLoaderRoute: typeof ApiCheckoutRatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/checkout/create': {
+      id: '/api/checkout/create'
+      path: '/api/checkout/create'
+      fullPath: '/api/checkout/create'
+      preLoaderRoute: typeof ApiCheckoutCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -199,11 +299,16 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   CatalogRoute: CatalogRoute,
+  CheckoutRoute: CheckoutRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
   JoinRoute: JoinRoute,
   TestingRoute: TestingRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ApiIpnRoute: ApiIpnRoute,
+  ApiCheckoutRatesRoute: ApiCheckoutRatesRoute,
+  ApiCheckoutCreateRoute: ApiCheckoutCreateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

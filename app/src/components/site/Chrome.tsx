@@ -1,10 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode, CSSProperties } from "react";
 import { PRODUCTS, fromPrice, type Product } from "../../lib/products";
+import { useCart } from "../../lib/cart";
 
 type NavKey = "catalog" | "testing" | "about" | "join" | null;
 
 export function Nav({ active }: { active?: NavKey }) {
+  const { count } = useCart();
   return (
     <nav>
       <div className="wrap row">
@@ -25,8 +27,8 @@ export function Nav({ active }: { active?: NavKey }) {
             Join
           </Link>
         </div>
-        <Link to="/catalog" className="btn">
-          Shop
+        <Link to="/checkout" className="btn">
+          Cart{count > 0 ? ` · ${count}` : ""}
         </Link>
       </div>
     </nav>

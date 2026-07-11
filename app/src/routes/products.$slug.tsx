@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
 import { PRODUCTS, getProduct } from "../lib/products";
+import { addLine } from "../lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
   head: ({ params }) => {
@@ -89,21 +90,50 @@ function ProductPage() {
               ))}
             </div>
 
-            <button
-              type="button"
-              className="btn"
-              style={{ width: "100%", padding: 15 }}
-              onClick={() => setAdded(true)}
-            >
-              {added ? (
-                "Added — cart is a demo"
-              ) : (
-                <span className="cartline">
-                  <span>Add to cart</span>
-                  <span>${price}</span>
-                </span>
-              )}
-            </button>
+            {p.counselGated ? (
+              <button
+                type="button"
+                className="btn"
+                style={{ width: "100%", padding: 15 }}
+                disabled
+              >
+                Pending legal review — not for sale
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: "100%", padding: 15 }}
+                  onClick={() => {
+                    addLine({
+                      slug: p.slug,
+                      name: p.name,
+                      size: p.sizes[sizeIdx][0],
+                      unitCents: price * 100,
+                      qty: 1,
+                    });
+                    setAdded(true);
+                  }}
+                >
+                  {added ? (
+                    "Added to cart ✓"
+                  ) : (
+                    <span className="cartline">
+                      <span>Add to cart</span>
+                      <span>${price}</span>
+                    </span>
+                  )}
+                </button>
+                {added ? (
+                  <p style={{ marginTop: 10, textAlign: "center", fontSize: 13 }}>
+                    <Link to="/checkout" style={{ color: "var(--gold)" }}>
+                      View cart &amp; check out →
+                    </Link>
+                  </p>
+                ) : null}
+              </>
+            )}
 
             <div className="meta">
               <div>

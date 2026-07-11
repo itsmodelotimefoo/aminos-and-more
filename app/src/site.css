@@ -171,6 +171,16 @@ body.am,
 .am .agebadge { display: inline-block; border: 1px solid var(--gold); color: var(--gold); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; }
 .am .disc { border-top: 1px solid var(--line); margin-top: 34px; padding-top: 22px; font-size: 12px; line-height: 1.7; color: #6f6c77; }
 
+/* AGE GATE */
+.am .am-gate { position: fixed; inset: 0; z-index: 200; background: rgba(6,6,8,.94); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.am .am-gate-card { max-width: 460px; width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 38px 30px; text-align: center; box-shadow: 0 30px 90px rgba(0,0,0,.6); }
+.am .am-gate-card .brand { font-family: "Anton", sans-serif; font-size: 24px; letter-spacing: 1px; }
+.am .am-gate-card .brand span { color: var(--gold); }
+.am .am-gate-card .agebadge { margin: 16px 0 20px; }
+.am .am-gate-card h2 { font-size: clamp(26px, 5vw, 38px); margin-bottom: 12px; }
+.am .am-gate-card p { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+.am .am-gate-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
 /* CHECKOUT */
 .am .co-empty { text-align: center; color: var(--muted); padding: 40px 0 60px; }
 .am .co-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 40px; align-items: start; }

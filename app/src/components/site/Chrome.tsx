@@ -1,7 +1,80 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode, CSSProperties } from "react";
+import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
 import { PRODUCTS, fromPrice, type Product } from "../../lib/products";
 import { useCart } from "../../lib/cart";
+
+const AGE_KEY = "am_age_ok";
+
+// Site-wide 21+ / research-use entry gate. Rendered visible on the server and
+// on first client paint (so unverified visitors never see content ungated),
+// then dismissed on mount if the visitor already acknowledged. SSR-safe:
+// initial state matches the server render; localStorage is only read in effect.
+export function AgeGate() {
+  const [open, setOpen] = useState(true);
+  const [declined, setDeclined] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(AGE_KEY) === "1") setOpen(false);
+    } catch {
+      /* localStorage unavailable — keep the gate up */
+    }
+  }, []);
+
+  if (!open) return null;
+
+  function enter() {
+    try {
+      window.localStorage.setItem(AGE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setOpen(false);
+  }
+
+  return (
+    <div className="am-gate" role="dialog" aria-modal="true" aria-label="Age verification">
+      <div className="am-gate-card">
+        <div className="brand">
+          AMINOS<span>&amp;</span>MORE
+        </div>
+        <div className="agebadge">21+ · Research use only</div>
+        {declined ? (
+          <>
+            <h2 className="disp">Access restricted.</h2>
+            <p>
+              You must be 21 or older to enter. These materials are for laboratory and research
+              use only — not for human or veterinary use.
+            </p>
+            <div className="am-gate-actions">
+              <button type="button" className="btn ghost" onClick={() => setDeclined(false)}>
+                Go back
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="disp">Before you enter.</h2>
+            <p>
+              The products on this site are research compounds for laboratory use only —{" "}
+              <b>not for human or veterinary use</b>. By entering you confirm you are{" "}
+              <b>21 or older</b> and a qualified researcher accessing this material for research
+              purposes.
+            </p>
+            <div className="am-gate-actions">
+              <button type="button" className="btn" onClick={enter}>
+                I am 21+ · Enter
+              </button>
+              <button type="button" className="btn ghost" onClick={() => setDeclined(true)}>
+                Leave
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type NavKey = "catalog" | "testing" | "about" | "join" | null;
 
@@ -144,6 +217,7 @@ export function SiteLayout({
 }) {
   return (
     <div className="am">
+      <AgeGate />
       <Nav active={active} />
       {children}
       <Footer />

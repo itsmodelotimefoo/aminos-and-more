@@ -24,17 +24,11 @@ export const Route = createFileRoute("/api/checkout/create")({
         const d = parsed.data;
 
         // Re-price every line from the authoritative catalog (never trust the
-        // client's prices) and block counsel-gated SKUs from checkout.
+        // client's prices).
         const priced: CartLine[] = [];
         for (const item of d.items) {
           const product = getProduct(item.slug);
           if (!product) return json({ error: `Unknown item: ${item.slug}.` }, 400);
-          if (product.counselGated) {
-            return json(
-              { error: `${product.name} is pending legal review and cannot be purchased yet.` },
-              403,
-            );
-          }
           const size = product.sizes.find((s) => s[0] === item.size);
           if (!size) return json({ error: `Invalid size for ${product.name}.` }, 400);
           priced.push({

@@ -60,14 +60,6 @@ function ProductPage() {
             <div className="cls">{p.cls}</div>
             <h1 className="disp">{p.name}</h1>
 
-            {p.counselGated ? (
-              <div className="flagnote">
-                <b>Pending legal review.</b> This SKU is presented by mechanism
-                nomenclature only and is gated for marketing until qualified
-                FDA/FTC counsel signs off.
-              </div>
-            ) : null}
-
             <p className="blurb">{p.blurb}</p>
 
             <div className="kicker" style={{ marginBottom: 8 }}>
@@ -90,50 +82,37 @@ function ProductPage() {
               ))}
             </div>
 
-            {p.counselGated ? (
-              <button
-                type="button"
-                className="btn"
-                style={{ width: "100%", padding: 15 }}
-                disabled
-              >
-                Pending legal review — not for sale
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ width: "100%", padding: 15 }}
-                  onClick={() => {
-                    addLine({
-                      slug: p.slug,
-                      name: p.name,
-                      size: p.sizes[sizeIdx][0],
-                      unitCents: price * 100,
-                      qty: 1,
-                    });
-                    setAdded(true);
-                  }}
-                >
-                  {added ? (
-                    "Added to cart ✓"
-                  ) : (
-                    <span className="cartline">
-                      <span>Add to cart</span>
-                      <span>${price}</span>
-                    </span>
-                  )}
-                </button>
-                {added ? (
-                  <p style={{ marginTop: 10, textAlign: "center", fontSize: 13 }}>
-                    <Link to="/checkout" style={{ color: "var(--gold)" }}>
-                      View cart &amp; check out →
-                    </Link>
-                  </p>
-                ) : null}
-              </>
-            )}
+            <button
+              type="button"
+              className="btn"
+              style={{ width: "100%", padding: 15 }}
+              onClick={() => {
+                addLine({
+                  slug: p.slug,
+                  name: p.name,
+                  size: p.sizes[sizeIdx][0],
+                  unitCents: price * 100,
+                  qty: 1,
+                });
+                setAdded(true);
+              }}
+            >
+              {added ? (
+                "Added to cart ✓"
+              ) : (
+                <span className="cartline">
+                  <span>Add to cart</span>
+                  <span>${price}</span>
+                </span>
+              )}
+            </button>
+            {added ? (
+              <p style={{ marginTop: 10, textAlign: "center", fontSize: 13 }}>
+                <Link to="/checkout" style={{ color: "var(--gold)" }}>
+                  View cart &amp; check out →
+                </Link>
+              </p>
+            ) : null}
 
             <div className="meta">
               <div>

@@ -1,8 +1,6 @@
 // Aminos & More — shared product catalog.
 // On-site text is identity / mechanism ONLY (name, class line, formula/CAS,
-// RUO, 21+). No health, therapeutic, or benefit claims; no dosing. Named
-// GLP-1 / triple-agonist SKUs carry `counselGated` and render a
-// "pending legal review" note (easy to unpublish — see COUNSEL_GATED).
+// RUO, 21+). No health, therapeutic, or benefit claims; no dosing.
 
 export type ProductKind = "peptide" | "duo" | "blend";
 
@@ -14,7 +12,6 @@ export type Product = {
   accent: string; // CSS var reference, e.g. "var(--copper)"
   img: string; // local path under /public
   tag?: string; // "Duo" | "Blend"
-  counselGated?: boolean; // GLP-1 / triple-agonist — pending legal review
   blurb: string; // mechanism / character identity, never a benefit
   sizes: [string, number][]; // [label, USD]
   cas: string;
@@ -113,7 +110,6 @@ export const PRODUCTS: Product[] = [
     cls: "Triple Agonist · GIP·GLP-1·GCG",
     kind: "peptide",
     accent: "var(--amber)",
-    counselGated: true,
     img: "/products/3a.png",
     blurb:
       "One molecule engaging three receptors — GIP, GLP-1 and glucagon. Mechanism nomenclature only.",

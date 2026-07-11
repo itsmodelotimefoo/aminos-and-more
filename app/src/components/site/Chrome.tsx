@@ -68,7 +68,6 @@ export function ProductCard({ p }: { p: Product }) {
     >
       <div className="imgwrap">
         {p.tag ? <span className="tag">{p.tag}</span> : null}
-        {p.counselGated ? <span className="tag flag">Pending review</span> : null}
         <div className="glow" />
         <img loading="lazy" decoding="async" src={p.img} alt={p.name} />
       </div>

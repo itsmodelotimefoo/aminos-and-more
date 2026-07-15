@@ -1,25 +1,16 @@
 {
-  // Root-level Cloudflare Workers config. Your Worker's "Root directory" is "/"
-  // and its deploy command is `npx wrangler deploy`, which runs here at the repo
-  // root — so this config + the prebuilt output in app/dist let it deploy with
-  // NO dashboard build step. (Cleaner long-term: set Root directory = "app" and
-  // Build command = "bun install && bun run build" in the dashboard, then this
-  // file and the committed app/dist can be removed.)
-  "name": "aminos-and-more",
-  "main": "app/dist/server/server.js",
+  // Flowdeck — served entirely as static assets from /public. No build step:
+  // Cloudflare uploads the folder and serves it directly. `not_found_handling`
+  // = single-page-application returns index.html for client-side routes so the
+  // PWA works on deep links and offline.
+  //
+  // Deploy:  npx wrangler deploy      (or connect the repo in the CF dashboard
+  //          with Root directory "/" and an empty build command)
+  "name": "flowdeck",
   "compatibility_date": "2025-05-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
   "assets": {
-    "directory": "app/dist/client",
-    "binding": "ASSETS",
-    "not_found_handling": "none"
+    "directory": "public",
+    "not_found_handling": "single-page-application"
   },
-  "vars": { "HF_ENV": "production", "APP_SLUG": "aminos-and-more" }
-
-  // Live checkout later: create a D1 db `aminos-orders`, add here
-  //   "d1_databases": [{ "binding": "DB", "database_name": "aminos-orders",
-  //     "database_id": "<id>" }]
-  // apply migrations (wrangler d1 migrations apply aminos-orders --remote),
-  // and set secrets NOWPAYMENTS_API_KEY / NOWPAYMENTS_IPN_SECRET / SHIPPO_API_TOKEN.
+  "observability": { "enabled": true }
 }

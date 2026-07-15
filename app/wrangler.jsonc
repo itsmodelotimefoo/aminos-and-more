@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // Standalone Cloudflare Workers config for deploying this storefront to YOUR
+  // own Cloudflare account (Workers & Pages → connect this GitHub repo, or
+  // `wrangler deploy`). Build command: `bun run build` (root directory: app).
+  "name": "aminos-and-more",
+
+  // TanStack Start SSR Worker entry (emitted by `vite build`).
+  "main": "dist/server/server.js",
+  "compatibility_date": "2025-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+
+  // Static files in dist/client serve directly; everything else (incl. "/")
+  // falls through to the SSR Worker.
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  },
+
+  "vars": { "HF_ENV": "production", "APP_SLUG": "aminos-and-more" }
+
+  // ── CHECKOUT DATABASE (D1) — turn on when wiring live checkout ──────
+  // The storefront (home, catalog, product pages, cart UI, age gate) deploys
+  // and runs WITHOUT this. Only completing a real checkout needs it. To enable:
+  //   1) Cloudflare → Workers & Pages → D1 → Create database → name `aminos-orders`.
+  //      Copy the database_id.
+  //   2) Uncomment the block below and paste the id (replace the zeros).
+  //   3) Apply the schema (from the `app/` folder):
+  //        wrangler d1 migrations apply aminos-orders --remote
+  //   4) Commit + push (redeploys).
+  //
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "aminos-orders",
+  //     "database_id": "00000000-0000-0000-0000-000000000000" }
+  // ],
+  //
+  // Secrets (Settings → Variables and Secrets, or `wrangler secret put <NAME>`):
+  // NOWPAYMENTS_API_KEY, NOWPAYMENTS_IPN_SECRET, SHIPPO_API_TOKEN. Never commit.
+}

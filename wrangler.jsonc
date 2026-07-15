@@ -1,25 +1,18 @@
 {
-  // Root-level Cloudflare Workers config. Your Worker's "Root directory" is "/"
-  // and its deploy command is `npx wrangler deploy`, which runs here at the repo
-  // root — so this config + the prebuilt output in app/dist let it deploy with
-  // NO dashboard build step. (Cleaner long-term: set Root directory = "app" and
-  // Build command = "bun install && bun run build" in the dashboard, then this
-  // file and the committed app/dist can be removed.)
-  "name": "aminos-and-more",
-  "main": "app/dist/server/server.js",
+  // Flowdeck — its OWN Cloudflare Worker, deliberately named differently from the
+  // Aminos & More store so `wrangler deploy` can never target the store's worker.
+  //
+  // ⚠️  Deploy safety: this app lives on the `flowdeck` branch only. Do NOT point
+  //     the Aminos store's Cloudflare project at this branch, and do NOT deploy
+  //     this config to the `aminos-and-more` worker. Deploy Flowdeck as its own
+  //     Worker/project.
+  //
+  // Served as static assets from /public — no build step.
+  "name": "flowdeck-app",
   "compatibility_date": "2025-05-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "observability": { "enabled": true },
   "assets": {
-    "directory": "app/dist/client",
-    "binding": "ASSETS",
-    "not_found_handling": "none"
+    "directory": "public",
+    "not_found_handling": "single-page-application"
   },
-  "vars": { "HF_ENV": "production", "APP_SLUG": "aminos-and-more" }
-
-  // Live checkout later: create a D1 db `aminos-orders`, add here
-  //   "d1_databases": [{ "binding": "DB", "database_name": "aminos-orders",
-  //     "database_id": "<id>" }]
-  // apply migrations (wrangler d1 migrations apply aminos-orders --remote),
-  // and set secrets NOWPAYMENTS_API_KEY / NOWPAYMENTS_IPN_SECRET / SHIPPO_API_TOKEN.
+  "observability": { "enabled": true }
 }

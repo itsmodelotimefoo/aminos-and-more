@@ -1,5 +1,5 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-C0CyT6Iu.js";
-import { L as Link, a as fromPrice } from "./router-Dne-IJ2b.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-DDGRuMda.js";
+import { L as Link, a as fromPrice } from "./router-Xof-El1P.js";
 const KEY = "am_cart_v1";
 const EVENT = "am-cart-change";
 function isBrowser() {
@@ -189,9 +189,9 @@ function Footer() {
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "kicker", style: { marginBottom: 10 }, children: "Company" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/testing", children: "Certificates of Analysis" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/join", children: "Contact" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/about", children: "Terms & Privacy" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/coa", children: "Certificates of Analysis" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/contact", children: "Contact" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/terms", children: "Terms & Privacy" })
       ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "disc", children: [
@@ -201,7 +201,7 @@ function Footer() {
       " Products are not intended to diagnose, treat, cure, or prevent any disease, and are not for human or veterinary consumption. Not a dietary supplement or drug. All purchasers must certify they are qualified and 21 years of age or older. © 2026 Aminos & More.",
       /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
       /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("em", { children: "Placeholder marketing site for client review. Product imagery is AI-generated concept art. Copy and product classification pending qualified FDA/FTC legal review before public launch." })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("em", { children: "Product imagery is AI-generated concept art and does not depict actual product." })
     ] })
   ] }) });
 }

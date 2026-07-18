@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-C0CyT6Iu.js";
-import { L as Link } from "./router-Dne-IJ2b.js";
-import { S as SiteLayout } from "./Chrome-3lGoYxxB.js";
+import { V as jsxRuntimeExports } from "./server-DDGRuMda.js";
+import { L as Link } from "./router-Xof-El1P.js";
+import { S as SiteLayout } from "./Chrome-DHNgVr-P.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -37,7 +37,7 @@ function Testing() {
           }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/catalog", className: "btn", children: "Shop tested lots" }) })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "chromo", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "lbl", children: "HPLC — LOT #AM-2601 · PURITY 99.2%" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "lbl", children: "HPLC — ILLUSTRATIVE TRACE · NOT AN ACTUAL RESULT" }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("svg", { viewBox: "0 0 340 130", preserveAspectRatio: "none", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("line", { x1: "0", y1: "120", x2: "340", y2: "120", stroke: "#33333d", strokeWidth: "1" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("polyline", { points: "0,118 60,117 110,116 158,42 166,12 174,42 220,114 270,116 340,117", fill: "none", stroke: "#C9A24B", strokeWidth: "2.5" }),
@@ -58,7 +58,7 @@ function Testing() {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "b", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { children: "Purity — HPLC" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Measures how much of the vial is the compound. Release standard: ≥98%." })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Measures how much of the vial is the compound. Release target: ≥98% — each lot's actual result is published on its CoA." })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "b", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { children: "Published — by lot" }),

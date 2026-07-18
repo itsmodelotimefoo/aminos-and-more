@@ -36,11 +36,11 @@ function Index() {
             <div className="stats">
               <div>
                 <b className="gold-text">≥98%</b>
-                <span>Purity standard</span>
+                <span>Typical purity</span>
               </div>
               <div>
-                <b className="gold-text">100%</b>
-                <span>Batches published</span>
+                <b className="gold-text">HPLC+MS</b>
+                <span>Identity &amp; purity</span>
               </div>
               <div>
                 <b className="gold-text">1:1</b>
@@ -99,7 +99,7 @@ function Index() {
             <div className="step">
               <div className="n">01</div>
               <h4>Source</h4>
-              <p>Vetted suppliers, held to a ≥98% purity standard.</p>
+              <p>Vetted suppliers, screened to a ≥98% purity target.</p>
             </div>
             <div className="step">
               <div className="n">02</div>
@@ -114,7 +114,7 @@ function Index() {
             <div className="step">
               <div className="n">04</div>
               <h4>Ship</h4>
-              <p>Lyophilized, room-temp stable, discreetly packaged.</p>
+              <p>Lyophilized, room-temp stable, carefully packaged and tracked.</p>
             </div>
           </div>
         </div>

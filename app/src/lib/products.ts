@@ -70,7 +70,7 @@ export const PRODUCTS: Product[] = [
     accent: "var(--eblue)",
     img: "/products/mots-c.png",
     blurb:
-      "The Power Runner. Activates AMPK via the folate–AICAR pathway; studied as an exercise-mimetic.",
+      "The Power Runner. Activates AMPK via the folate–AICAR pathway — the cell's metabolic master switch.",
     sizes: [["10 mg", 65], ["20 mg", 125], ["40 mg", 220]],
     cas: "1627580-64-6",
     formula: "C101H152N28O22S2",

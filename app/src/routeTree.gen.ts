@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestingRouteImport } from './routes/testing'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as JoinRouteImport } from './routes/join'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CoaRouteImport } from './routes/coa'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout-success'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
@@ -28,6 +31,11 @@ const TestingRoute = TestingRouteImport.update({
   path: '/testing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -41,6 +49,16 @@ const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoaRoute = CoaRouteImport.update({
+  id: '/coa',
+  path: '/coa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
@@ -95,9 +113,12 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
+  '/coa': typeof CoaRoute
+  '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -110,9 +131,12 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
+  '/coa': typeof CoaRoute
+  '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -126,9 +150,12 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/checkout-success': typeof CheckoutSuccessRoute
+  '/coa': typeof CoaRoute
+  '/contact': typeof ContactRoute
   '/join': typeof JoinRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/terms': typeof TermsRoute
   '/testing': typeof TestingRoute
   '/api/ipn': typeof ApiIpnRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -143,9 +170,12 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/checkout'
     | '/checkout-success'
+    | '/coa'
+    | '/contact'
     | '/join'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/terms'
     | '/testing'
     | '/api/ipn'
     | '/products/$slug'
@@ -158,9 +188,12 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/checkout'
     | '/checkout-success'
+    | '/coa'
+    | '/contact'
     | '/join'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/terms'
     | '/testing'
     | '/api/ipn'
     | '/products/$slug'
@@ -173,9 +206,12 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/checkout'
     | '/checkout-success'
+    | '/coa'
+    | '/contact'
     | '/join'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/terms'
     | '/testing'
     | '/api/ipn'
     | '/products/$slug'
@@ -189,9 +225,12 @@ export interface RootRouteChildren {
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  CoaRoute: typeof CoaRoute
+  ContactRoute: typeof ContactRoute
   JoinRoute: typeof JoinRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermsRoute: typeof TermsRoute
   TestingRoute: typeof TestingRoute
   ApiIpnRoute: typeof ApiIpnRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
@@ -206,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/testing'
       fullPath: '/testing'
       preLoaderRoute: typeof TestingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -227,6 +273,20 @@ declare module '@tanstack/react-router' {
       path: '/join'
       fullPath: '/join'
       preLoaderRoute: typeof JoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coa': {
+      id: '/coa'
+      path: '/coa'
+      fullPath: '/coa'
+      preLoaderRoute: typeof CoaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout-success': {
@@ -301,9 +361,12 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  CoaRoute: CoaRoute,
+  ContactRoute: ContactRoute,
   JoinRoute: JoinRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermsRoute: TermsRoute,
   TestingRoute: TestingRoute,
   ApiIpnRoute: ApiIpnRoute,
   ProductsSlugRoute: ProductsSlugRoute,

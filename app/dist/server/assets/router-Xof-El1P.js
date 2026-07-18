@@ -1,4 +1,4 @@
-import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet } from "./server-C0CyT6Iu.js";
+import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet } from "./server-DDGRuMda.js";
 import { env } from "cloudflare:workers";
 import { g as getOrder, u as updatePayment, s as setFulfillment, o as object, a as array, l as literal, b as string, n as number, i as insertOrder, c as setInvoiceId } from "./orders.server-DVmQ-msp.js";
 var reactUse = reactExports.use;
@@ -2246,7 +2246,7 @@ var Link = reactExports.forwardRef((props, ref) => {
   }
   return reactExports.createElement(_asChild, linkProps, children);
 });
-var Route$e = class Route extends BaseRoute {
+var Route$h = class Route extends BaseRoute {
   /**
   * @deprecated Use the `createRoute` function instead.
   */
@@ -2304,7 +2304,7 @@ var Route$e = class Route extends BaseRoute {
   }
 };
 function createRoute(options) {
-  return new Route$e(options);
+  return new Route$h(options);
 }
 function createRootRouteWithContext() {
   return (options) => {
@@ -5268,7 +5268,7 @@ function NotFound({ icon, title, subtitle, actions, size = "md", variant = "plai
   });
 }
 const appCss = "/assets/styles-Dk2JBuJV.css";
-const siteCss = "/assets/site-G-Y0duOX.css";
+const siteCss = "/assets/site-BgKf5Imu.css";
 function reportHiggsfieldError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__higgsfieldEvents?.captureException?.(
@@ -5385,7 +5385,7 @@ function ErrorComponent({ error, reset }) {
     ] })
   ] }) });
 }
-const Route$d = createRootRouteWithContext()({
+const Route$g = createRootRouteWithContext()({
   // Read the committed page metadata at build time (no runtime fetch).
   head: () => buildHead(appMeta),
   shellComponent: RootShell,
@@ -5403,7 +5403,7 @@ function RootShell({ children }) {
   ] });
 }
 function RootComponent() {
-  const { queryClient } = Route$d.useRouteContext();
+  const { queryClient } = Route$g.useRouteContext();
   reactExports.useEffect(() => {
     {
       return;
@@ -5411,8 +5411,8 @@ function RootComponent() {
   }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter$7 = () => import("./testing-BPgTLFXE.js");
-const Route$c = createFileRoute("/testing")({
+const $$splitComponentImporter$a = () => import("./testing-BlwqHyuy.js");
+const Route$f = createFileRoute("/testing")({
   head: () => ({
     meta: [{
       title: "Testing — Aminos & More"
@@ -5421,7 +5421,19 @@ const Route$c = createFileRoute("/testing")({
       content: "The testing moat: HPLC + mass spec on every lot at an independent accredited lab, with the full Certificate of Analysis published and tied to the lot number."
     }]
   }),
-  component: lazyRouteComponent($$splitComponentImporter$7, "component")
+  component: lazyRouteComponent($$splitComponentImporter$a, "component")
+});
+const $$splitComponentImporter$9 = () => import("./terms-B9apqL2g.js");
+const Route$e = createFileRoute("/terms")({
+  head: () => ({
+    meta: [{
+      title: "Terms & Privacy — Aminos & More"
+    }, {
+      name: "description",
+      content: "Terms of sale and privacy policy for Aminos & More — research use only, buyer certification, payment, shipping, and data handling."
+    }]
+  }),
+  component: lazyRouteComponent($$splitComponentImporter$9, "component")
 });
 const PRODUCTS = [
   {
@@ -5470,7 +5482,7 @@ const PRODUCTS = [
     kind: "peptide",
     accent: "var(--eblue)",
     img: "/products/mots-c.png",
-    blurb: "The Power Runner. Activates AMPK via the folate–AICAR pathway; studied as an exercise-mimetic.",
+    blurb: "The Power Runner. Activates AMPK via the folate–AICAR pathway — the cell's metabolic master switch.",
     sizes: [["10 mg", 65], ["20 mg", 125], ["40 mg", 220]],
     cas: "1627580-64-6",
     formula: "C101H152N28O22S2",
@@ -5586,7 +5598,7 @@ function getProduct(slug) {
 function fromPrice(p) {
   return "from $" + Math.min(...p.sizes.map((s) => s[1]));
 }
-const Route$b = createFileRoute("/sitemap.xml")({
+const Route$d = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
@@ -5623,7 +5635,7 @@ const Route$b = createFileRoute("/sitemap.xml")({
     }
   }
 });
-const Route$a = createFileRoute("/robots.txt")({
+const Route$c = createFileRoute("/robots.txt")({
   server: {
     handlers: {
       GET: async ({ request }) => {
@@ -5644,8 +5656,8 @@ const Route$a = createFileRoute("/robots.txt")({
     }
   }
 });
-const $$splitComponentImporter$6 = () => import("./join-BK4mduke.js");
-const Route$9 = createFileRoute("/join")({
+const $$splitComponentImporter$8 = () => import("./join-C-SQ9dF6.js");
+const Route$b = createFileRoute("/join")({
   head: () => ({
     meta: [{
       title: "Join the Club — Aminos & More"
@@ -5654,9 +5666,33 @@ const Route$9 = createFileRoute("/join")({
       content: "New lots, fresh lab reports, members-only access. Confirm you are 21+ to join."
     }]
   }),
+  component: lazyRouteComponent($$splitComponentImporter$8, "component")
+});
+const $$splitComponentImporter$7 = () => import("./contact-ByoMssFT.js");
+const Route$a = createFileRoute("/contact")({
+  head: () => ({
+    meta: [{
+      title: "Contact — Aminos & More"
+    }, {
+      name: "description",
+      content: "Contact Aminos & More about orders, Certificates of Analysis, shipping, or data requests."
+    }]
+  }),
+  component: lazyRouteComponent($$splitComponentImporter$7, "component")
+});
+const $$splitComponentImporter$6 = () => import("./coa-hVsD7r6o.js");
+const Route$9 = createFileRoute("/coa")({
+  head: () => ({
+    meta: [{
+      title: "Certificates of Analysis — Aminos & More"
+    }, {
+      name: "description",
+      content: "Every lot is tested for identity and purity by an independent accredited lab, with the Certificate of Analysis published and tied to the lot number on your vial."
+    }]
+  }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./checkout-success-2k3H9AUo.js");
+const $$splitComponentImporter$5 = () => import("./checkout-success-w_vOEaXH.js");
 const Route$8 = createFileRoute("/checkout-success")({
   validateSearch: (s) => ({
     order: typeof s.order === "string" ? s.order : void 0
@@ -5671,7 +5707,7 @@ const Route$8 = createFileRoute("/checkout-success")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$5, "component")
 });
-const $$splitComponentImporter$4 = () => import("./checkout-DhdC3H9Z.js");
+const $$splitComponentImporter$4 = () => import("./checkout-BWJVq0nT.js");
 const Route$7 = createFileRoute("/checkout")({
   head: () => ({
     meta: [{
@@ -5683,7 +5719,7 @@ const Route$7 = createFileRoute("/checkout")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$4, "component")
 });
-const $$splitComponentImporter$3 = () => import("./catalog-BwQ2dU9i.js");
+const $$splitComponentImporter$3 = () => import("./catalog-C1whV0Kb.js");
 const Route$6 = createFileRoute("/catalog")({
   head: () => ({
     meta: [{
@@ -5695,7 +5731,7 @@ const Route$6 = createFileRoute("/catalog")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-const $$splitComponentImporter$2 = () => import("./about-BSL_p2ca.js");
+const $$splitComponentImporter$2 = () => import("./about-KknhYsbp.js");
 const Route$5 = createFileRoute("/about")({
   head: () => ({
     meta: [{
@@ -5707,11 +5743,11 @@ const Route$5 = createFileRoute("/about")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-const $$splitComponentImporter$1 = () => import("./index-swqea6XR.js");
+const $$splitComponentImporter$1 = () => import("./index-xiAFEIRY.js");
 const Route$4 = createFileRoute("/")({
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./products._slug-DqnIjWuc.js");
+const $$splitComponentImporter = () => import("./products._slug-Fayi0eoM.js");
 const Route$3 = createFileRoute("/products/$slug")({
   head: ({
     params
@@ -6218,70 +6254,85 @@ function json(data, status = 200) {
     headers: { "Content-Type": "application/json" }
   });
 }
-const TestingRoute = Route$c.update({
+const TestingRoute = Route$f.update({
   id: "/testing",
   path: "/testing",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
-const SitemapDotxmlRoute = Route$b.update({
+const TermsRoute = Route$e.update({
+  id: "/terms",
+  path: "/terms",
+  getParentRoute: () => Route$g
+});
+const SitemapDotxmlRoute = Route$d.update({
   id: "/sitemap.xml",
   path: "/sitemap.xml",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
-const RobotsDottxtRoute = Route$a.update({
+const RobotsDottxtRoute = Route$c.update({
   id: "/robots.txt",
   path: "/robots.txt",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
-const JoinRoute = Route$9.update({
+const JoinRoute = Route$b.update({
   id: "/join",
   path: "/join",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
+});
+const ContactRoute = Route$a.update({
+  id: "/contact",
+  path: "/contact",
+  getParentRoute: () => Route$g
+});
+const CoaRoute = Route$9.update({
+  id: "/coa",
+  path: "/coa",
+  getParentRoute: () => Route$g
 });
 const CheckoutSuccessRoute = Route$8.update({
   id: "/checkout-success",
   path: "/checkout-success",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const CheckoutRoute = Route$7.update({
   id: "/checkout",
   path: "/checkout",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const CatalogRoute = Route$6.update({
   id: "/catalog",
   path: "/catalog",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const AboutRoute = Route$5.update({
   id: "/about",
   path: "/about",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const IndexRoute = Route$4.update({
   id: "/",
   path: "/",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const ProductsSlugRoute = Route$3.update({
   id: "/products/$slug",
   path: "/products/$slug",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const ApiIpnRoute = Route$2.update({
   id: "/api/ipn",
   path: "/api/ipn",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const ApiCheckoutRatesRoute = Route$1.update({
   id: "/api/checkout/rates",
   path: "/api/checkout/rates",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const ApiCheckoutCreateRoute = Route2.update({
   id: "/api/checkout/create",
   path: "/api/checkout/create",
-  getParentRoute: () => Route$d
+  getParentRoute: () => Route$g
 });
 const rootRouteChildren = {
   IndexRoute,
@@ -6289,16 +6340,19 @@ const rootRouteChildren = {
   CatalogRoute,
   CheckoutRoute,
   CheckoutSuccessRoute,
+  CoaRoute,
+  ContactRoute,
   JoinRoute,
   RobotsDottxtRoute,
   SitemapDotxmlRoute,
+  TermsRoute,
   TestingRoute,
   ApiIpnRoute,
   ProductsSlugRoute,
   ApiCheckoutCreateRoute,
   ApiCheckoutRatesRoute
 };
-const routeTree = Route$d._addFileChildren(rootRouteChildren)._addFileTypes();
+const routeTree = Route$g._addFileChildren(rootRouteChildren)._addFileTypes();
 const getRouter = () => {
   const queryClient = new QueryClient();
   const router2 = createRouter({

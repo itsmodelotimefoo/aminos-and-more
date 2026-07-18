@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-C0CyT6Iu.js";
-import { L as Link, P as PRODUCTS } from "./router-Dne-IJ2b.js";
-import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-3lGoYxxB.js";
+import { V as jsxRuntimeExports } from "./server-DDGRuMda.js";
+import { L as Link, P as PRODUCTS } from "./router-Xof-El1P.js";
+import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-DHNgVr-P.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -32,11 +32,11 @@ function Index() {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "stats", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("b", { className: "gold-text", children: "≥98%" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Purity standard" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Typical purity" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("b", { className: "gold-text", children: "100%" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Batches published" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("b", { className: "gold-text", children: "HPLC+MS" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Identity & purity" })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("b", { className: "gold-text", children: "1:1" }),
@@ -75,7 +75,7 @@ function Index() {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "step", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "n", children: "01" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { children: "Source" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Vetted suppliers, held to a ≥98% purity standard." })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Vetted suppliers, screened to a ≥98% purity target." })
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "step", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "n", children: "02" }),
@@ -90,7 +90,7 @@ function Index() {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "step", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "n", children: "04" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { children: "Ship" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Lyophilized, room-temp stable, discreetly packaged." })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Lyophilized, room-temp stable, carefully packaged and tracked." })
         ] })
       ] })
     ] }) })

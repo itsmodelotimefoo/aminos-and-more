@@ -182,9 +182,9 @@ export function Footer() {
             <div className="kicker" style={{ marginBottom: 10 }}>
               Company
             </div>
-            <Link to="/testing">Certificates of Analysis</Link>
-            <Link to="/join">Contact</Link>
-            <Link to="/about">Terms &amp; Privacy</Link>
+            <Link to="/coa">Certificates of Analysis</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/terms">Terms &amp; Privacy</Link>
           </div>
         </div>
         <div className="disc">
@@ -198,9 +198,8 @@ export function Footer() {
           <br />
           <br />
           <em>
-            Placeholder marketing site for client review. Product imagery is
-            AI-generated concept art. Copy and product classification pending
-            qualified FDA/FTC legal review before public launch.
+            Product imagery is AI-generated concept art and does not depict
+            actual product.
           </em>
         </div>
       </div>

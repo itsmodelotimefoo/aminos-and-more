@@ -267,3 +267,27 @@ body { background: var(--bg); }
 .am .co-fulfilled { color: var(--green); }
 .am .co-failed { color: var(--crimson); }
 .am .co-expired { color: var(--muted); }
+
+/* Legal / Contact / CoA pages (brand-review Finding 6) */
+.am .legal { max-width: 720px; }
+.am .legal p, .am .legal li { color: var(--muted); font-size: 15px; margin: 12px 0; }
+.am .legal h2 { font-family: "Anton", sans-serif; font-size: 24px; margin-top: 44px; color: var(--cream); }
+.am .legal h3 { font-size: 16px; margin-top: 26px; color: var(--cream); }
+.am .legal ul { margin: 12px 0 12px 20px; }
+.am .legal a { color: var(--gold); }
+.am .draftbar { max-width: 720px; margin: 0 auto 8px; background: rgba(224,145,60,.08); border: 1px solid rgba(224,145,60,.35); color: #e0b48a; border-radius: 12px; padding: 14px 16px; font-size: 13px; }
+.am .updated { max-width: 720px; margin: 0 auto; color: #6f6c77; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+.am .note { background: rgba(224,145,60,.08); border: 1px solid rgba(224,145,60,.35); color: #e0b48a; border-radius: 12px; padding: 14px 16px; font-size: 13px; margin-top: 22px; }
+.am .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 28px 0; }
+@media (max-width: 640px) { .am .contact-grid { grid-template-columns: 1fr; } }
+.am .cbox { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.am .cbox .lbl { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+.am .cbox a { display: inline-block; margin-top: 8px; font-size: 17px; color: var(--cream); font-weight: 600; }
+.am .cbox p { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.am .lookup { max-width: 640px; margin: 26px auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+.am .lookup .lbl { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
+.am .lookup form { display: flex; gap: 10px; flex-wrap: wrap; }
+.am .lookup input { flex: 1; min-width: 180px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; color: var(--cream); font-size: 15px; font-family: inherit; }
+.am .lookup input:focus { outline: none; border-color: var(--gold); }
+.am .lookup small { display: block; color: #6f6c77; font-size: 12px; margin-top: 10px; }
+.am .three .b .n { font-family: "Anton", sans-serif; font-size: 30px; color: var(--gold); }

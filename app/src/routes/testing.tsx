@@ -49,7 +49,7 @@ function Testing() {
               </p>
             </div>
             <div className="chromo">
-              <div className="lbl">HPLC — LOT #AM-2601 · PURITY 99.2%</div>
+              <div className="lbl">HPLC — ILLUSTRATIVE TRACE · NOT AN ACTUAL RESULT</div>
               <svg viewBox="0 0 340 130" preserveAspectRatio="none">
                 <line x1="0" y1="120" x2="340" y2="120" stroke="#33333d" strokeWidth="1" />
                 <polyline
@@ -80,7 +80,7 @@ function Testing() {
             </div>
             <div className="b">
               <h4>Purity — HPLC</h4>
-              <p>Measures how much of the vial is the compound. Release standard: ≥98%.</p>
+              <p>Measures how much of the vial is the compound. Release target: ≥98% — each lot's actual result is published on its CoA.</p>
             </div>
             <div className="b">
               <h4>Published — by lot</h4>

@@ -26,7 +26,13 @@
       "database_id": "709d63fa-70ff-4bf3-8bef-126d91a94f94",
       "migrations_dir": "app/migrations"
     }
-  ]
+  ],
+
+  // Payment reconciliation sweep (src/server.ts -> scheduled). Every 15 min it
+  // re-checks orders stuck 'pending' (no callback ever arrived) or 'paid' with
+  // no tracking (label purchase failed), so confirmation never depends on
+  // webhook delivery alone.
+  "triggers": { "crons": ["*/15 * * * *"] }
 
   // Remaining secrets to set: NOWPAYMENTS_API_KEY, NOWPAYMENTS_IPN_SECRET.
 }

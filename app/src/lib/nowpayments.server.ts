@@ -47,6 +47,34 @@ export async function createInvoice(args: {
   return { invoiceId: String(json.id), invoiceUrl: String(json.invoice_url) };
 }
 
+// ---- Status lookups (used by the reconciliation job) ----
+// The webhook is the fast path; these let us confirm payment state even if a
+// callback is never delivered.
+
+async function npGet(path: string): Promise<any | null> {
+  const res = await fetch(`${NP_BASE}${path}`, {
+    method: "GET",
+    headers: { "x-api-key": apiKey() },
+  });
+  if (!res.ok) return null;
+  return await res.json().catch(() => null);
+}
+
+// Precise lookup — only possible once we've learned a payment_id.
+export async function getPaymentById(paymentId: string): Promise<any | null> {
+  return await npGet(`/payment/${encodeURIComponent(paymentId)}`);
+}
+
+// Fallback for orders where no callback ever arrived, so we have no
+// payment_id: list recent payments and match on order_id (we set order_id to
+// our own order id at invoice creation).
+export async function listRecentPayments(limit = 100): Promise<any[]> {
+  const json = await npGet(`/payment/?limit=${limit}&page=0&sortBy=created_at&orderBy=desc`);
+  if (!json) return [];
+  const list = json.data ?? json.result ?? json.payments ?? [];
+  return Array.isArray(list) ? list : [];
+}
+
 // NOWPayments signs the IPN body with HMAC-SHA512 over the JSON with keys
 // sorted alphabetically (recursively), keyed by the IPN secret. Compare against
 // the `x-nowpayments-sig` header.

@@ -85,6 +85,33 @@ export async function insertOrder(o: NewOrder): Promise<void> {
     .run();
 }
 
+// Orders the reconciliation sweep should re-check. Two stuck states:
+//   'pending' — invoice created, no confirmation ever landed
+//   'paid'    — confirmed, but the label purchase never completed (no tracking)
+// Bounded by age on both ends so the sweep stays cheap and ignores ancient rows.
+export async function listStuckOrders(
+  minAgeMs: number,
+  maxAgeMs: number,
+  limit = 50,
+): Promise<OrderRow[]> {
+  const now = Date.now();
+  const res = await db()
+    .prepare(
+      `SELECT * FROM orders
+        WHERE (
+          (status = 'pending')
+          OR (status = 'paid' AND (tracking_number IS NULL OR tracking_number = ''))
+        )
+          AND created_at <= ?
+          AND created_at >= ?
+        ORDER BY created_at ASC
+        LIMIT ?`,
+    )
+    .bind(now - minAgeMs, now - maxAgeMs, limit)
+    .all<OrderRow>();
+  return res.results ?? [];
+}
+
 export async function getOrder(id: string): Promise<OrderRow | null> {
   return await db().prepare("SELECT * FROM orders WHERE id = ?").bind(id).first<OrderRow>();
 }

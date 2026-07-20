@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { verifyIpnSignature, mapPaymentStatus } from "../lib/nowpayments.server";
-import { getOrder, updatePayment, setFulfillment } from "../lib/orders.server";
-import { buyLabel } from "../lib/shippo.server";
+import { verifyIpnSignature } from "../lib/nowpayments.server";
+import { advanceOrderById } from "../lib/reconcile.server";
 
-// NOWPayments Instant Payment Notification receiver. Verifies the HMAC-SHA512
-// signature, flips the order to paid, and — on first confirmation — buys the
-// Shippo label and stores tracking. Idempotent: repeated callbacks won't
-// re-purchase a label. Always returns 200 once we've recorded the event so
-// NOWPayments stops retrying.
+// NOWPayments Instant Payment Notification receiver — the FAST path for
+// confirming payment. Verifies the HMAC-SHA512 signature, then hands off to the
+// shared advanceOrder() path (also used by the scheduled reconciliation sweep),
+// so "what happens when an order is paid" has exactly one implementation and is
+// idempotent: repeated callbacks never buy a second label.
+//
+// Always returns 200 once the event is recorded so NOWPayments stops retrying.
+// If a callback is ever dropped, the reconciliation cron recovers the order —
+// confirmation does not depend on webhook delivery alone.
 export const Route = createFileRoute("/api/ipn")({
   server: {
     handlers: {
@@ -20,42 +23,24 @@ export const Route = createFileRoute("/api/ipn")({
         }
 
         const orderId = String(payload.order_id ?? "");
-        const order = orderId ? await getOrder(orderId) : null;
-        if (!order) {
-          // Nothing to update, but ack so NOWPayments stops retrying.
-          return new Response("ok", { status: 200 });
-        }
+        if (!orderId) return new Response("ok", { status: 200 });
 
-        const paymentStatus = String(payload.payment_status ?? "");
-        const mapped = mapPaymentStatus(paymentStatus);
-
-        // Don't downgrade an already-fulfilled order.
-        if (order.status !== "fulfilled") {
-          await updatePayment(orderId, {
-            status: mapped,
-            npPaymentId: payload.payment_id != null ? String(payload.payment_id) : null,
-            npPaymentStatus: paymentStatus || null,
-            payCurrency: payload.pay_currency != null ? String(payload.pay_currency) : null,
+        try {
+          const result = await advanceOrderById(orderId, {
+            payment_id: payload.payment_id,
+            payment_status: payload.payment_status,
+            pay_currency: payload.pay_currency,
           });
-        }
-
-        // First time we see it paid → buy the label + fulfill.
-        if (mapped === "paid" && order.status !== "fulfilled" && order.shippo_rate_id) {
-          try {
-            const label = await buyLabel(order.shippo_rate_id);
-            await setFulfillment(orderId, {
-              carrier: label.carrier || order.ship_carrier || "",
-              tracking: label.tracking,
-              labelUrl: label.labelUrl,
-            });
-            // NOTE: transactional confirmation email is not wired — no email
-            // provider is configured. The order + tracking are stored; the
-            // buyer sees status on /checkout-success. Add an email provider
-            // (e.g. Resend/Postmark) here to send the confirmation.
-          } catch (e) {
-            console.error("Shippo label purchase failed for", orderId, e);
-            // Leave the order 'paid'; label can be retried from the dashboard.
+          // Unknown order: ack anyway so NOWPayments stops retrying.
+          if (result) {
+            console.log(
+              `[ipn] ${orderId} ${result.from} -> ${result.to}` +
+                (result.note ? ` (${result.note})` : ""),
+            );
           }
+        } catch (e) {
+          // Ack regardless: the reconciliation sweep will pick this order up.
+          console.error("[ipn] failed to advance", orderId, e);
         }
 
         return new Response("ok", { status: 200 });

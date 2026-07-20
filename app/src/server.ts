@@ -38,6 +38,33 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 export default {
+  // Scheduled reconciliation (Cron Trigger, see wrangler.jsonc "triggers").
+  // Safety net so a dropped NOWPayments callback can never leave a paid order
+  // unshipped: re-checks stuck orders and advances them through the same
+  // idempotent path the webhook uses. No-ops quietly when payments aren't
+  // configured yet.
+  async scheduled(event: unknown, env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    const run = (async () => {
+      try {
+        const { reconcileStuckOrders } = await import("./lib/reconcile.server");
+        const summary = await reconcileStuckOrders();
+        if (summary.scanned > 0 || summary.errors.length > 0) {
+          console.log(
+            `[reconcile] scanned=${summary.scanned} advanced=${summary.advanced.length} errors=${summary.errors.length}`,
+          );
+          for (const a of summary.advanced) {
+            console.log(`[reconcile] ${a.orderId} ${a.from} -> ${a.to}${a.note ? ` (${a.note})` : ""}`);
+          }
+          for (const err of summary.errors) console.error(`[reconcile] ${err}`);
+        }
+      } catch (error) {
+        console.error("[reconcile] sweep failed", error);
+      }
+    })();
+    ctx?.waitUntil?.(run);
+    await run;
+  },
+
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();

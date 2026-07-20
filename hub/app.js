@@ -118,6 +118,16 @@ const api = {
     if (!LIVE) return demo.lots;
     return sb('/lots?select=*&order=tested_on.desc');
   },
+  async createStore(store) {
+    if (!LIVE) { demo.stores.push(store); return store; }
+    const r = await sb('/stores', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(store) });
+    return r[0];
+  },
+  async createOrder(order) {
+    if (!LIVE) { demo.orders.unshift(order); return order; }
+    const r = await sb('/orders', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(order) });
+    return r[0];
+  },
   async addLot(lot) {
     if (!LIVE) { demo.lots.unshift({ id: Date.now(), ...lot }); return lot; }
     const r = await sb('/lots', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(lot) });
@@ -230,6 +240,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
     <button class="linkbtn" data-action="nav" data-to="lab"><span class="ico">🧪</span> Lab · COAs</button>
+    <button class="linkbtn" data-action="new-order"><span class="ico">＋</span> New order</button>
   </div>`;
 
   // recent orders
@@ -336,7 +347,7 @@ async function viewOrders() {
       (o.ship_name || '').toLowerCase().includes(q) || (o.tracking_number || '').toLowerCase().includes(q)));
 
   let html = topbar('Orders', LIVE ? 'Live · all brands' : 'Demo data · all brands', {
-    right: `<button class="icon-btn" data-action="nav" data-to="analytics" aria-label="Analytics" title="Analytics">◔</button><button class="icon-btn" data-action="export" aria-label="Export CSV" title="Export CSV" style="margin-left:8px">⤓</button><button class="icon-btn" data-action="refresh" aria-label="Refresh" style="margin-left:8px">⟳</button>`,
+    right: `<button class="icon-btn" data-action="new-order" aria-label="New order" title="New manual order">＋</button><button class="icon-btn" data-action="nav" data-to="analytics" aria-label="Analytics" title="Analytics" style="margin-left:8px">◔</button><button class="icon-btn" data-action="export" aria-label="Export CSV" title="Export CSV" style="margin-left:8px">⤓</button><button class="icon-btn" data-action="refresh" aria-label="Refresh" style="margin-left:8px">⟳</button>`,
   });
   html += `<div class="view">`;
   if (!LIVE) html += `<div class="banner">Showing <b>demo data</b>. Add your Supabase URL + anon key in <b>config.js</b> to go live.</div>`;
@@ -733,6 +744,45 @@ function openAddLot() {
   setTimeout(() => $('#modal-root input[name=lot_code]')?.focus(), 60);
 }
 
+function openAddStore() {
+  openSheet(`<h3>Add brand / store</h3>
+    <form data-action="submit-store">
+      <div class="field"><label>Name</label><input class="input" name="name" placeholder="New Brand" autocomplete="off" required /></div>
+      <div class="field"><label>Slug <span style="color:var(--faint)">(lowercase id)</span></label><input class="input" name="slug" placeholder="newbrand" autocomplete="off" required /></div>
+      <div class="field"><label>Domain</label><input class="input" name="domain" placeholder="newbrand.com" autocomplete="off" /></div>
+      <div class="field"><label>Order prefix</label><input class="input" name="order_prefix" placeholder="NB" maxlength="4" autocomplete="off" required /></div>
+      <div class="field"><label>Packaging note</label><input class="input" name="packaging" placeholder="Brand box + insert" autocomplete="off" /></div>
+      <div class="field"><label>Accent colour</label><input class="input" name="accent" type="color" value="#5b6cff" style="height:46px;padding:6px" /></div>
+      <button class="btn primary" type="submit">Create brand</button>
+    </form>`);
+  setTimeout(() => $('#modal-root input[name=name]')?.focus(), 60);
+}
+
+function mlLineHtml() {
+  const opts = (cache.inventory || []).map((i) => `<option value="${esc(i.sku)}" data-name="${esc(i.products?.name || i.sku)}">${esc(i.products?.name || i.sku)}</option>`).join('');
+  return `<div class="ml-line">
+    <select class="selectbox ml-sku" name="sku">${opts || '<option value="">—</option>'}</select>
+    <input class="input ml-qty" name="qty" type="number" min="1" value="1" inputmode="numeric" aria-label="Qty" />
+    <input class="input ml-price" name="price" type="number" min="0" step="0.01" placeholder="$ each" inputmode="decimal" aria-label="Unit price" />
+    <button type="button" class="ml-del" data-action="ml-del" aria-label="Remove">✕</button>
+  </div>`;
+}
+function openManualOrder() {
+  const stores = state.stores.map((s) => `<option value="${esc(s.slug)}">${esc(s.name)}</option>`).join('');
+  openSheet(`<h3>New manual order</h3>
+    <form data-action="submit-manual">
+      <div class="field"><label>Brand</label><select class="selectbox" name="store">${stores}</select></div>
+      <div class="field"><label>Customer name</label><input class="input" name="name" placeholder="Full name" autocomplete="off" /></div>
+      <div class="field"><label>Email</label><input class="input" name="email" type="email" placeholder="email@example.com" autocomplete="off" /></div>
+      <label style="display:block;font-size:13px;font-weight:650;color:var(--muted);margin-bottom:7px">Items</label>
+      <div id="ml-lines">${mlLineHtml()}</div>
+      <button type="button" class="btn sm ghost" data-action="ml-add" style="margin:2px 0 14px">＋ Add item</button>
+      <div class="field"><label>Status</label><select class="selectbox" name="status"><option value="paid">Paid</option><option value="pending">Pending</option><option value="fulfilled">Fulfilled</option></select></div>
+      <button class="btn primary" type="submit">Create order</button>
+    </form>`);
+  setTimeout(() => $('#modal-root select[name=store]')?.focus(), 60);
+}
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
@@ -765,7 +815,8 @@ function viewSettings() {
   </div>`;
   html += `<div class="section-title">Brands</div><div class="card">`;
   html += state.stores.map((s) => `<div class="kv"><span class="k">${brandBadge(s.slug)}</span><span class="v">${esc(s.domain || '')}</span></div>`).join('');
-  html += `<div class="hint">Add a brand by inserting a row in the <b>stores</b> table; new storefronts just write orders with their slug.</div></div>`;
+  html += `<button class="btn sm" data-action="add-store" style="margin-top:12px">＋ Add brand</button>`;
+  html += `<div class="hint">New storefronts just write orders with their slug — or log sales here with New order.</div></div>`;
   if (LIVE) html += `<button class="btn danger" data-action="signout" style="margin-top:6px;color:var(--red);border-color:rgba(248,113,113,.4)">Sign out</button>`;
   html += `<div style="text-align:center;color:var(--faint);font-size:12px;margin:22px 0">Ops Hub · v1 · private</div>`;
   html += `</div>` + bottomNav('settings');
@@ -820,6 +871,13 @@ document.addEventListener('click', async (e) => {
   const { action, to, id, val, status } = el.dataset;
   switch (action) {
     case 'add-lot': openAddLot(); break;
+    case 'add-store': openAddStore(); break;
+    case 'new-order':
+      if (!cache.inventory) { try { cache.inventory = await api.inventory(); } catch (err) {} }
+      openManualOrder();
+      break;
+    case 'ml-add': { const box = $('#ml-lines'); if (box) box.insertAdjacentHTML('beforeend', mlLineHtml()); break; }
+    case 'ml-del': { const line = el.closest('.ml-line'); const box = $('#ml-lines'); if (line && box && box.querySelectorAll('.ml-line').length > 1) line.remove(); break; }
     case 'close-sheet': closeSheet(); break;
     case 'nav': go(to); break;
     case 'back': history.length > 1 ? history.back() : go('orders'); break;
@@ -885,6 +943,53 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const store = e.target.closest('[data-action="submit-store"]');
+  if (store) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(store).entries());
+    const slug = (d.slug || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!slug) { toast('Enter a valid slug'); return; }
+    const btn = store.querySelector('button[type=submit]'); btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      const rec = { slug, name: (d.name || '').trim(), domain: (d.domain || '').trim() || null,
+        order_prefix: (d.order_prefix || 'XX').trim().toUpperCase(),
+        label_profile: { packaging: (d.packaging || '').trim(), accent: d.accent || '#5b6cff' } };
+      await api.createStore(rec);
+      state.stores = null; state.storesById = {}; cache.orders = null;
+      closeSheet(); toast('Brand created'); render();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Create brand'; toast(err.status === 409 ? 'Slug already exists' : err.status === 401 ? 'Session expired' : 'Create failed'); }
+    return;
+  }
+  const manual = e.target.closest('[data-action="submit-manual"]');
+  if (manual) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(manual).entries());
+    const st = state.storesById[d.store] || state.stores.find((s) => s.slug === d.store);
+    const items = [];
+    manual.querySelectorAll('.ml-line').forEach((ln) => {
+      const sel = ln.querySelector('.ml-sku');
+      const sku = sel.value;
+      const name = sel.selectedOptions[0]?.dataset.name || sku;
+      const qty = Math.max(1, parseInt(ln.querySelector('.ml-qty').value, 10) || 1);
+      const unit = Math.round((parseFloat(ln.querySelector('.ml-price').value) || 0) * 100);
+      if (sku) items.push({ sku, name, qty, unit_cents: unit });
+    });
+    if (!items.length) { toast('Add at least one item'); return; }
+    const subtotal = items.reduce((s, i) => s + i.unit_cents * i.qty, 0);
+    const btn = manual.querySelector('button[type=submit]'); btn.textContent = 'Creating…'; btn.disabled = true;
+    const id = (st?.order_prefix || 'XX') + '-' + (crypto.randomUUID ? crypto.randomUUID().slice(0, 8).toUpperCase() : Math.random().toString(36).slice(2, 10).toUpperCase());
+    try {
+      await api.createOrder({
+        id, store_slug: d.store, status: d.status || 'paid', email: (d.email || '').trim() || null,
+        ship_name: (d.name || '').trim() || null, items,
+        subtotal_cents: subtotal, shipping_cents: 0, tax_cents: 0, total_cents: subtotal,
+        created_at: new Date().toISOString(),
+      });
+      cache.orders = null;
+      closeSheet(); toast('Order ' + id + ' created'); go('order/' + id);
+    } catch (err) { btn.disabled = false; btn.textContent = 'Create order'; toast(err.status === 401 ? 'Session expired' : 'Create failed'); }
     return;
   }
   const lot = e.target.closest('[data-action="submit-lot"]');

@@ -208,6 +208,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="analytics"><span class="ico">◔</span> Analytics</button>
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
+    <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
   </div>`;
 
   // recent orders
@@ -579,13 +580,72 @@ async function viewAnalytics() {
 }
 function fmtDay(ts) { const d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate(); }
 
+/* ---------- Restock / purchasing ------------------------------------ */
+const REORDER_POINT = 10; // available at/below this → reorder
+const PAR_LEVEL = 40;     // restock target
+// units committed by paid-but-unshipped orders (reserve-on-paid), by sku
+function committedUnits(orders) {
+  const m = {};
+  orders.filter((o) => o.status === 'paid').forEach((o) =>
+    (o.items || []).forEach((it) => { const k = it.sku || it.name; m[k] = (m[k] || 0) + (it.qty || 1); }));
+  return m;
+}
+
+async function viewRestock() {
+  const root = $('#app');
+  root.innerHTML = topbar('Restock', 'What to reorder') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
+  let inv, orders;
+  try { inv = cache.inventory = await api.inventory(); orders = cache.orders = await api.orders(); }
+  catch (e) { return renderError(e, 'restock'); }
+  const committed = committedUnits(orders);
+  const rows = inv.map((i) => {
+    const onHand = i.on_hand || 0;
+    const com = committed[i.sku] || 0;
+    const avail = onHand - com;
+    const rp = i.reorder_point != null ? i.reorder_point : REORDER_POINT;
+    const par = i.par_level != null ? i.par_level : PAR_LEVEL;
+    const suggest = avail <= rp ? Math.max(0, par - avail) : 0;
+    return { sku: i.sku, name: i.products?.name || i.sku, onHand, com, avail, rp, suggest,
+      state: avail <= 0 ? 'out' : avail <= rp ? 'low' : 'ok' };
+  }).sort((a, b) => {
+    const rank = { out: 0, low: 1, ok: 2 };
+    return rank[a.state] - rank[b.state] || a.avail - b.avail;
+  });
+  const need = rows.filter((r) => r.suggest > 0);
+
+  let html = topbar('Restock', LIVE ? 'What to reorder' : 'What to reorder · demo', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  html += `<div class="banner">Available = on-hand − committed to paid orders (reserved). Items at or below their reorder point are flagged.</div>`;
+  html += `<div class="stats"><div class="stat ${need.length ? 'amber' : 'green'}"><div class="n">${need.length}</div><div class="l">Need reorder</div></div>
+    <div class="stat"><div class="n">${need.reduce((s, r) => s + r.suggest, 0)}</div><div class="l">Units to buy</div></div></div>`;
+
+  html += `<div class="section-title">Reorder list</div>`;
+  if (!need.length) {
+    html += `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">✅</div><h3>Fully stocked</h3><p>Nothing is at its reorder point.</p></div></div>`;
+  }
+  html += `<div class="card" style="padding:8px 16px">`;
+  html += rows.map((r) => `<div class="rk">
+      <div class="rk-top"><div><span class="rk-nm">${esc(r.name)}</span> <span class="rk-sku">${esc(r.sku)}</span></div>
+        ${r.suggest > 0 ? `<span class="rk-buy ${r.state}">Buy ${r.suggest}</span>` : `<span class="pill st-fulfilled" style="font-size:11px">OK</span>`}</div>
+      <div class="rk-meta"><span>On-hand <b>${r.onHand}</b></span><span>Committed <b>${r.com}</b></span><span class="rk-av ${r.state}">Available <b>${r.avail}</b></span></div>
+      <form class="rk-receive" data-action="receive" data-sku="${esc(r.sku)}" data-cur="${r.onHand}">
+        <input class="input" name="qty" type="number" inputmode="numeric" min="1" placeholder="Receive qty" autocomplete="off" />
+        <button class="btn sm" type="submit">Receive</button>
+      </form>
+    </div>`).join('');
+  html += `</div>`;
+  html += `</div>` + bottomNav('inventory');
+  root.innerHTML = html;
+}
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
   let inv;
   try { inv = cache.inventory = await api.inventory(); } catch (e) { return renderError(e, 'inventory'); }
-  let html = topbar('Inventory', 'Shared across brands');
-  html += `<div class="view"><div class="banner">One shared stock pool — every brand draws from the same counts.</div><div class="card" style="padding:6px 16px">`;
+  let html = topbar('Inventory', 'Shared across brands', { right: `<button class="icon-btn" data-action="nav" data-to="restock" aria-label="Restock" title="Restock">⟳</button>` });
+  html += `<div class="view"><button class="btn" data-action="nav" data-to="restock" style="margin-bottom:12px">📦 Restock list · what to reorder</button>`;
+  html += `<div class="banner">One shared stock pool — every brand draws from the same counts.</div><div class="card" style="padding:6px 16px">`;
   html += inv.map((i) => {
     const n = i.on_hand || 0; const cls = n === 0 ? 'out' : n <= 10 ? 'low' : '';
     const nm = i.products?.name || i.sku;
@@ -650,6 +710,7 @@ async function render() {
   if (seg === 'analytics') return viewAnalytics();
   if (seg === 'customers') return viewCustomers();
   if (seg === 'customer') return viewCustomer(arg);
+  if (seg === 'restock') return viewRestock();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -724,6 +785,20 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const rec = e.target.closest('[data-action="receive"]');
+  if (rec) {
+    e.preventDefault();
+    const qty = Math.max(0, parseInt(new FormData(rec).get('qty'), 10) || 0);
+    if (!qty) { toast('Enter a quantity'); return; }
+    const btn = rec.querySelector('button[type=submit]'); btn.textContent = '…'; btn.disabled = true;
+    try {
+      const next = await api.adjustInventory(rec.dataset.sku, Number(rec.dataset.cur), qty);
+      cache.inventory = null;
+      toast(rec.dataset.sku + ' received → ' + next);
+      viewRestock();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Receive'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
     return;
   }
   const shipQ = e.target.closest('[data-action="ship-queue"]');

@@ -3,3 +3,6 @@ node_modules
 # Ops Hub — real config holds your Supabase URL/anon key; keep it out of git.
 # Copy hub/config.example.js -> hub/config.js locally and fill it in.
 hub/config.js
+
+# local wrangler dev cache
+.wrangler/

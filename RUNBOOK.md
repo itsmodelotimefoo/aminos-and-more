@@ -9,6 +9,17 @@ This lives on the **`ops-hub`** branch and is deliberately isolated: it deploys 
 its own Cloudflare Worker on its own domain and never shares a deploy with any
 storefront (which is what caused the earlier incident).
 
+## Modules
+Command (dashboard) · Orders (search / CSV / manual entry) · Analytics ·
+Payments · Customers · To-Ship queue · Restock (reserve-on-paid) · Lab / COAs ·
+Tasks · Inventory · Settings (add-brand). All mobile-first, all one source of
+truth in Supabase.
+
+> **Enabling Lab & Tasks on an already-migrated DB:** just re-run
+> [`db/schema.sql`](db/schema.sql) in the SQL editor — it's idempotent
+> (`create ... if not exists` + policy re-creation) and simply adds the new
+> `lots` and `tasks` tables without touching existing data.
+
 ## What's in this branch
 ```
 db/schema.sql              shared Postgres schema + Row Level Security

@@ -1,0 +1,17 @@
+{
+  // Ops Hub — its OWN Cloudflare Worker, separate from every storefront brand.
+  // Private back office (staff auth via Supabase). Static assets, no build step.
+  //
+  // Deploy from this folder:  cd hub && npx wrangler deploy
+  // (or connect a NEW Cloudflare project with Root directory "hub").
+  //
+  // ⚠️  Never point a storefront's Cloudflare project at this — it is a distinct
+  //     worker/app on its own domain (e.g. ops.<yourdomain>).
+  "name": "ops-hub",
+  "compatibility_date": "2025-05-01",
+  "assets": {
+    "directory": ".",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}

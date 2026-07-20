@@ -4,6 +4,7 @@ import { estimateTaxCents } from "../lib/tax";
 import { getProduct } from "../lib/products";
 import { insertOrder, setInvoiceId } from "../lib/orders.server";
 import { createInvoice } from "../lib/nowpayments.server";
+import { mirrorUpsertOrder } from "../lib/supabase-mirror.server";
 
 export const Route = createFileRoute("/api/checkout/create")({
   server: {
@@ -82,6 +83,34 @@ export const Route = createFileRoute("/api/checkout/create")({
             cancelUrl: `${origin}/checkout?canceled=1`,
           });
           await setInvoiceId(orderId, invoice.invoiceId);
+
+          // Mirror into the shared Supabase (Ops Hub). Best-effort: no-op unless
+          // configured, and never allowed to fail the checkout response.
+          await mirrorUpsertOrder({
+            id: orderId,
+            email: d.email,
+            items: priced,
+            subtotalCents: subtotal,
+            shippingCents: d.shippingCents,
+            taxCents: tax,
+            totalCents: total,
+            certified21: d.certified21,
+            certifiedResearcher: d.certifiedResearcher,
+            ship: {
+              name: d.address.name,
+              street1: d.address.street1,
+              street2: d.address.street2 ?? "",
+              city: d.address.city,
+              state: d.address.state,
+              zip: d.address.zip,
+              country: d.address.country,
+              phone: d.address.phone ?? "",
+            },
+            shippoRateId: d.shippoRateId,
+            carrier: d.carrier,
+            service: d.service,
+            npInvoiceId: invoice.invoiceId,
+          });
 
           return json({ orderId, invoiceUrl: invoice.invoiceUrl });
         } catch (e) {

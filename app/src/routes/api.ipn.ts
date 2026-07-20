@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyIpnSignature, mapPaymentStatus } from "../lib/nowpayments.server";
 import { getOrder, updatePayment, setFulfillment } from "../lib/orders.server";
 import { buyLabel } from "../lib/shippo.server";
+import { mirrorPayment, mirrorFulfillment } from "../lib/supabase-mirror.server";
 
 // NOWPayments Instant Payment Notification receiver. Verifies the HMAC-SHA512
 // signature, flips the order to paid, and — on first confirmation — buys the
@@ -37,6 +38,13 @@ export const Route = createFileRoute("/api/ipn")({
             npPaymentStatus: paymentStatus || null,
             payCurrency: payload.pay_currency != null ? String(payload.pay_currency) : null,
           });
+          // Mirror to the shared Supabase (Ops Hub) — best-effort, guarded.
+          await mirrorPayment(orderId, {
+            status: mapped,
+            npPaymentId: payload.payment_id != null ? String(payload.payment_id) : null,
+            npPaymentStatus: paymentStatus || null,
+            payCurrency: payload.pay_currency != null ? String(payload.pay_currency) : null,
+          });
         }
 
         // First time we see it paid → buy the label + fulfill.
@@ -44,6 +52,11 @@ export const Route = createFileRoute("/api/ipn")({
           try {
             const label = await buyLabel(order.shippo_rate_id);
             await setFulfillment(orderId, {
+              carrier: label.carrier || order.ship_carrier || "",
+              tracking: label.tracking,
+              labelUrl: label.labelUrl,
+            });
+            await mirrorFulfillment(orderId, {
               carrier: label.carrier || order.ship_carrier || "",
               tracking: label.tracking,
               labelUrl: label.labelUrl,

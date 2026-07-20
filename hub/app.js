@@ -144,8 +144,10 @@ function topbar(title, sub, opts = {}) {
   return `<div class="topbar">${opts.left || ''}<div style="flex:1;min-width:0"><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${opts.right || ''}</div>`;
 }
 function bottomNav(active) {
-  const item = (to, icon, label) => `<a data-action="nav" data-to="${to}" class="${active === to ? 'sel' : ''}"><span class="ni">${icon}</span>${label}</a>`;
-  return `<nav class="nav">${item('orders', '▤', 'Orders')}${item('inventory', '▦', 'Inventory')}${item('settings', '⚙', 'Settings')}</nav>`;
+  const shipCount = (cache.orders || []).filter((o) => o.status === 'paid').length;
+  const badge = shipCount ? `<span class="navbadge">${shipCount}</span>` : '';
+  const item = (to, icon, label, extra = '') => `<a data-action="nav" data-to="${to}" class="${active === to ? 'sel' : ''}"><span class="ni">${icon}${extra}</span>${label}</a>`;
+  return `<nav class="nav">${item('orders', '▤', 'Orders')}${item('ship', '⇥', 'To Ship', badge)}${item('inventory', '▦', 'Inventory')}${item('settings', '⚙', 'Settings')}</nav>`;
 }
 function orderRow(o) {
   const count = (o.items || []).reduce((n, i) => n + (i.qty || 1), 0);
@@ -192,7 +194,7 @@ async function viewOrders() {
   html += `<div class="stats">
     <div class="stat"><div class="n">${todays.length}</div><div class="l">Orders today</div></div>
     <div class="stat green"><div class="n">${money(revenue)}</div><div class="l">Paid revenue</div></div>
-    <div class="stat amber"><div class="n">${toShip}</div><div class="l">Ready to ship</div></div>
+    <div class="stat amber" data-action="nav" data-to="ship" style="cursor:pointer"><div class="n">${toShip}</div><div class="l">Ready to ship ›</div></div>
     <div class="stat ${lowStock ? 'amber' : ''}"><div class="n">${lowStock}</div><div class="l">Low stock SKUs</div></div>
   </div>`;
 
@@ -283,6 +285,64 @@ async function viewOrder(id) {
   root.innerHTML = html + bottomNav('orders');
 }
 
+async function viewShip() {
+  const root = $('#app');
+  root.innerHTML = topbar('To Ship', 'Paid · awaiting fulfillment') + `<div class="view"><div class="center"><div class="spin"></div>Loading queue…</div></div>` + bottomNav('ship');
+  let orders;
+  try { orders = cache.orders = await api.orders(); } catch (e) { return renderError(e, 'ship'); }
+  const queue = orders.filter((o) => o.status === 'paid')
+    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)); // oldest first — ship those first
+
+  // group by brand so a batch is packed with one brand's labels at a time
+  const groups = {};
+  queue.forEach((o) => { (groups[o.store_slug] = groups[o.store_slug] || []).push(o); });
+  const slugs = Object.keys(groups);
+
+  let html = topbar('To Ship', `${queue.length} awaiting`, {
+    right: `<button class="icon-btn" data-action="refresh" aria-label="Refresh">⟳</button>`,
+  });
+  html += `<div class="view">`;
+  if (!queue.length) {
+    html += `<div class="card"><div class="empty"><div class="big">🎉</div><h3>All shipped</h3><p>No paid orders waiting to go out. Nice.</p></div></div>`;
+  } else {
+    for (const slug of slugs) {
+      const s = state.storesById[slug] || {};
+      const accent = s.label_profile?.accent || '#5b6cff';
+      const packaging = s.label_profile?.packaging || 'brand packaging';
+      const list = groups[slug];
+      html += `<div class="ship-group">
+        <div class="ship-group-head">${brandBadge(slug)}<span class="ship-count">${list.length} to pack</span></div>
+        <div class="packbanner" style="background:linear-gradient(135deg,${esc(accent)},#0b1220);margin-bottom:10px">
+          <div class="k">Pack &amp; label as</div><div class="v" style="font-size:18px">${esc(s.name || slug)}</div>
+          <div class="p">${esc(packaging)}</div>
+        </div>`;
+      html += list.map(shipRow).join('');
+      html += `</div>`;
+    }
+  }
+  html += `</div>` + bottomNav('ship');
+  root.innerHTML = html;
+}
+
+function shipRow(o) {
+  const items = (o.items || []).map((i) => `${i.qty || 1}× ${esc(i.name || i.sku)}`).join(', ');
+  return `<form class="shiprow" data-action="ship-queue" data-id="${esc(o.id)}">
+    <div class="shiprow-top">
+      <button type="button" class="shiprow-info" data-action="open-order" data-id="${esc(o.id)}">
+        <span class="oid">${esc(o.id)}</span>
+        <span class="who">${esc(o.ship_name || o.email || '')}</span>
+      </button>
+      <span class="amt">${money(o.total_cents)}</span>
+    </div>
+    <div class="shiprow-items">${items || 'no items'}</div>
+    <div class="ship-inputs">
+      <input class="input" name="carrier" placeholder="Carrier" value="${esc(o.ship_carrier || '')}" autocomplete="off" />
+      <input class="input" name="tracking" placeholder="Tracking #" autocomplete="off" />
+      <button class="btn primary" type="submit">Ship</button>
+    </div>
+  </form>`;
+}
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
@@ -349,6 +409,7 @@ async function render() {
   }
   const { seg, arg } = route();
   if (seg === 'order') return viewOrder(arg);
+  if (seg === 'ship') return viewShip();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewOrders();
@@ -408,6 +469,25 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const shipQ = e.target.closest('[data-action="ship-queue"]');
+  if (shipQ) {
+    e.preventDefault();
+    const id = shipQ.dataset.id;
+    const d = Object.fromEntries(new FormData(shipQ).entries());
+    const btn = shipQ.querySelector('button[type=submit]'); btn.textContent = '…'; btn.disabled = true;
+    try {
+      await api.updateOrder(id, {
+        status: 'fulfilled',
+        ship_carrier: d.carrier || null,
+        tracking_carrier: d.carrier || null,
+        tracking_number: d.tracking || null,
+      });
+      cache.orders = null;
+      toast(id + ' shipped');
+      viewShip(); // re-render the queue; the shipped order drops off
+    } catch (err) { btn.disabled = false; btn.textContent = 'Ship'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
     return;
   }
 });

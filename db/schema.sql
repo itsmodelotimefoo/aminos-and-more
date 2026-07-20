@@ -115,6 +115,20 @@ create table if not exists lots (
 );
 create index if not exists lots_sku_idx on lots (sku, tested_on desc);
 
+-- ---------- team ops tasks --------------------------------------------------
+create table if not exists tasks (
+  id         bigint generated always as identity primary key,
+  title      text not null,
+  done       boolean not null default false,
+  priority   text not null default 'med',      -- low | med | high
+  due        date,
+  assignee   text,
+  store_slug text references stores(slug) on delete set null,  -- optional brand tag
+  created_at timestamptz not null default now(),
+  done_at    timestamptz
+);
+create index if not exists tasks_open_idx on tasks (done, priority);
+
 -- ---------- staff allowlist (drives RLS) ------------------------------------
 create table if not exists staff (
   user_id    uuid primary key references auth.users(id) on delete cascade,
@@ -138,12 +152,13 @@ alter table stores         enable row level security;
 alter table products       enable row level security;
 alter table store_products enable row level security;
 alter table lots           enable row level security;
+alter table tasks          enable row level security;
 alter table staff          enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['orders','order_items','inventory','stores','products','store_products','lots'] loop
+  foreach t in array array['orders','order_items','inventory','stores','products','store_products','lots','tasks'] loop
     execute format('drop policy if exists staff_all on %I;', t);
     execute format(
       'create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff());', t);

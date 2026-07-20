@@ -76,7 +76,15 @@ const demo = (() => {
     { id: 3, lot_code: 'GHKCU-2404A', sku: 'GHKCU', purity: 99.5, tested_on: '2025-06-10', result: 'pass', coa_url: 'https://example.com/coa/GHKCU-2404A.pdf' },
     { id: 4, lot_code: 'MOTSC-2405B', sku: 'MOTSC', purity: 97.9, tested_on: '2025-07-12', result: 'pending', coa_url: '' },
   ];
-  return { stores, orders, inventory, lots };
+  const day = 86400000;
+  const dstr = (off) => new Date(now + off * day).toISOString().slice(0, 10);
+  const tasks = [
+    { id: 1, title: 'Reorder MOTS-c — out of stock', done: false, priority: 'high', due: dstr(0), assignee: 'You', store_slug: null },
+    { id: 2, title: 'Upload BPC-157 lot COA to site', done: false, priority: 'med', due: dstr(2), assignee: 'Lab', store_slug: 'aminos' },
+    { id: 3, title: 'Restock WLL insert cards', done: false, priority: 'low', due: dstr(5), assignee: '', store_slug: 'getwll' },
+    { id: 4, title: 'Confirm Shippo pickup Friday', done: true, priority: 'med', due: dstr(-1), assignee: 'You', store_slug: null },
+  ];
+  return { stores, orders, inventory, lots, tasks };
 })();
 
 /* ---------- backend: Supabase REST --------------------------------- */
@@ -117,6 +125,24 @@ const api = {
   async lots() {
     if (!LIVE) return demo.lots;
     return sb('/lots?select=*&order=tested_on.desc');
+  },
+  async tasks() {
+    if (!LIVE) return demo.tasks;
+    return sb('/tasks?select=*&order=done.asc,due.asc.nullslast');
+  },
+  async addTask(t) {
+    if (!LIVE) { demo.tasks.unshift({ id: Date.now(), done: false, ...t }); return t; }
+    const r = await sb('/tasks', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(t) });
+    return r[0];
+  },
+  async updateTask(id, patch) {
+    if (!LIVE) { const t = demo.tasks.find((x) => x.id === id); if (t) Object.assign(t, patch); return t; }
+    const r = await sb('/tasks?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch) });
+    return r[0];
+  },
+  async deleteTask(id) {
+    if (!LIVE) { demo.tasks = demo.tasks.filter((x) => x.id !== id); return; }
+    await sb('/tasks?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
   },
   async createStore(store) {
     if (!LIVE) { demo.stores.push(store); return store; }
@@ -192,7 +218,7 @@ function orderRow(o) {
 }
 
 /* ---------- views --------------------------------------------------- */
-let cache = { orders: null, inventory: null, lots: undefined };
+let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined };
 
 /* ---------- Home / command dashboard -------------------------------- */
 async function viewHome() {
@@ -241,6 +267,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
     <button class="linkbtn" data-action="nav" data-to="lab"><span class="ico">🧪</span> Lab · COAs</button>
+    <button class="linkbtn" data-action="nav" data-to="tasks"><span class="ico">✓</span> Tasks</button>
     <button class="linkbtn" data-action="new-order"><span class="ico">＋</span> New order</button>
   </div>`;
 
@@ -831,6 +858,72 @@ function openManualOrder() {
   setTimeout(() => $('#modal-root select[name=store]')?.focus(), 60);
 }
 
+/* ---------- Tasks / team ops ---------------------------------------- */
+const TPRIO = { high: 0, med: 1, low: 2 };
+async function loadTasks() {
+  if (cache.tasks !== undefined) return cache.tasks;
+  try { cache.tasks = await api.tasks(); } catch (e) { cache.tasks = (e.status === 404 || e.status === 400) ? null : []; }
+  return cache.tasks;
+}
+function taskRow(t) {
+  const overdue = !t.done && t.due && t.due < new Date().toISOString().slice(0, 10);
+  const meta = [];
+  meta.push(`<span class="prio-dot ${esc(t.priority)}"></span>${esc(t.priority)}`);
+  if (t.assignee) meta.push(esc(t.assignee));
+  if (t.due) meta.push(`<span class="${overdue ? 'overdue' : ''}">${overdue ? 'overdue ' : 'due '}${esc(t.due)}</span>`);
+  if (t.store_slug) meta.push(`<span class="b-pip" style="background:${esc(state.storesById[t.store_slug]?.label_profile?.accent || '#5b6cff')}"></span>`);
+  return `<div class="tk ${t.done ? 'done' : ''}">
+    <button class="tk-check ${t.done ? 'on' : ''}" data-action="task-toggle" data-id="${t.id}" aria-label="Toggle">${t.done ? '✓' : ''}</button>
+    <button class="tk-body" data-action="task-edit" data-id="${t.id}">
+      <div class="tk-title">${esc(t.title)}</div>
+      <div class="tk-meta">${meta.join(' · ')}</div>
+    </button>
+  </div>`;
+}
+async function viewTasks() {
+  const root = $('#app');
+  root.innerHTML = topbar('Tasks', 'Team ops') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  const tasks = await loadTasks();
+  let html = topbar('Tasks', 'Team ops', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  if (tasks === null) {
+    html += `<div class="card"><div class="empty"><div class="big">✅</div><h3>Enable Tasks</h3><p>Run the <b>tasks</b> table migration in Supabase (db/schema.sql).</p></div></div></div>` + bottomNav('home');
+    root.innerHTML = html; return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const open = tasks.filter((t) => !t.done).sort((a, b) => TPRIO[a.priority] - TPRIO[b.priority] || (a.due || '9999').localeCompare(b.due || '9999'));
+  const done = tasks.filter((t) => t.done);
+  const overdue = open.filter((t) => t.due && t.due < today).length;
+
+  html += `<div class="stats"><div class="stat"><div class="n">${open.length}</div><div class="l">Open</div></div><div class="stat ${overdue ? 'amber' : 'green'}"><div class="n">${overdue}</div><div class="l">Overdue</div></div></div>`;
+  html += `<form class="add-row" data-action="task-add"><input class="input" name="title" placeholder="Add a task…" autocomplete="off" /><button type="submit" aria-label="Add">＋</button></form>`;
+  html += `<div class="section-title">Open</div><div class="card" style="padding:6px 16px">`;
+  html += open.length ? open.map(taskRow).join('') : `<div class="hint" style="padding:10px 0;text-align:center">Nothing open — nice.</div>`;
+  html += `</div>`;
+  if (done.length) {
+    html += `<div class="section-title">Done <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${done.length}</span></div><div class="card" style="padding:6px 16px">`;
+    html += done.slice(0, 20).map(taskRow).join('');
+    html += `</div>`;
+  }
+  html += `</div>` + bottomNav('home');
+  root.innerHTML = html;
+}
+function openEditTask(id) {
+  const t = (cache.tasks || []).find((x) => String(x.id) === String(id));
+  if (!t) return;
+  const stores = `<option value="">— no brand —</option>` + state.stores.map((s) => `<option value="${esc(s.slug)}" ${t.store_slug === s.slug ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
+  const prio = ['high', 'med', 'low'].map((pr) => `<option value="${pr}" ${t.priority === pr ? 'selected' : ''}>${pr[0].toUpperCase() + pr.slice(1)}</option>`).join('');
+  openSheet(`<h3>Edit task</h3>
+    <form data-action="task-save" data-id="${esc(t.id)}">
+      <div class="field"><label>Title</label><input class="input" name="title" value="${esc(t.title)}" autocomplete="off" required /></div>
+      <div class="field"><label>Priority</label><select class="selectbox" name="priority">${prio}</select></div>
+      <div class="field"><label>Due</label><input class="input" name="due" type="date" value="${esc(t.due || '')}" /></div>
+      <div class="field"><label>Assignee</label><input class="input" name="assignee" value="${esc(t.assignee || '')}" placeholder="Who's on it" autocomplete="off" /></div>
+      <div class="field"><label>Brand</label><select class="selectbox" name="store_slug">${stores}</select></div>
+      <div class="btn-row"><button class="btn primary" type="submit">Save</button><button class="btn danger" type="button" data-action="task-delete" data-id="${esc(t.id)}" style="color:var(--red);border-color:rgba(248,113,113,.4)">Delete</button></div>
+    </form>`);
+}
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
@@ -907,6 +1000,7 @@ async function render() {
   if (seg === 'restock') return viewRestock();
   if (seg === 'lab') return viewLab();
   if (seg === 'payments') return viewPayments();
+  if (seg === 'tasks') return viewTasks();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -925,6 +1019,16 @@ document.addEventListener('click', async (e) => {
       if (!cache.inventory) { try { cache.inventory = await api.inventory(); } catch (err) {} }
       openManualOrder();
       break;
+    case 'task-edit': openEditTask(el.dataset.id); break;
+    case 'task-toggle': {
+      const t = (cache.tasks || []).find((x) => String(x.id) === String(el.dataset.id));
+      if (t) { try { await api.updateTask(t.id, { done: !t.done, done_at: !t.done ? new Date().toISOString() : null }); cache.tasks = undefined; viewTasks(); } catch (err) { toast('Update failed'); } }
+      break;
+    }
+    case 'task-delete': {
+      try { await api.deleteTask(el.dataset.id); cache.tasks = undefined; closeSheet(); toast('Task deleted'); viewTasks(); } catch (err) { toast('Delete failed'); }
+      break;
+    }
     case 'ml-add': { const box = $('#ml-lines'); if (box) box.insertAdjacentHTML('beforeend', mlLineHtml()); break; }
     case 'ml-del': { const line = el.closest('.ml-line'); const box = $('#ml-lines'); if (line && box && box.querySelectorAll('.ml-line').length > 1) line.remove(); break; }
     case 'close-sheet': closeSheet(); break;
@@ -993,6 +1097,29 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const taskAdd = e.target.closest('[data-action="task-add"]');
+  if (taskAdd) {
+    e.preventDefault();
+    const title = (new FormData(taskAdd).get('title') || '').toString().trim();
+    if (!title) return;
+    try { await api.addTask({ title, priority: 'med', done: false }); cache.tasks = undefined; viewTasks(); }
+    catch (err) { toast(err.status === 401 ? 'Session expired' : 'Add failed'); }
+    return;
+  }
+  const taskSave = e.target.closest('[data-action="task-save"]');
+  if (taskSave) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(taskSave).entries());
+    const btn = taskSave.querySelector('button[type=submit]'); btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      await api.updateTask(taskSave.dataset.id, {
+        title: (d.title || '').trim(), priority: d.priority || 'med',
+        due: d.due || null, assignee: (d.assignee || '').trim() || null, store_slug: d.store_slug || null,
+      });
+      cache.tasks = undefined; closeSheet(); toast('Saved'); viewTasks();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Save'; toast(err.status === 401 ? 'Session expired' : 'Save failed'); }
     return;
   }
   const store = e.target.closest('[data-action="submit-store"]');

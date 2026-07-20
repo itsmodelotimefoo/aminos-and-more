@@ -1,5 +1,5 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { S as SiteLayout } from "./Chrome-YlUHsn7M.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { S as SiteLayout } from "./Chrome-1M4XhM36.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -7,7 +7,8 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./router-BNaIzqbm.js";
+import "./router-CDSweWN3.js";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function Join() {

@@ -1,11 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
-import { PRODUCTS, getProduct } from "../lib/products";
+import { getProduct } from "../lib/products";
+import { loadCatalog } from "../lib/api/catalog.functions";
 import { addLine } from "../lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
+  loader: async () => ({ products: await loadCatalog() }),
   head: ({ params }) => {
+    // Meta uses the static catalog (head is sync); the body renders the live one.
     const p = getProduct(params.slug);
     const name = p ? p.name : "Product";
     return {
@@ -25,7 +28,8 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const p = getProduct(slug);
+  const { products } = Route.useLoaderData();
+  const p = products.find((x) => x.slug === slug);
   const [sizeIdx, setSizeIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
@@ -46,7 +50,7 @@ function ProductPage() {
     );
   }
 
-  const more = PRODUCTS.filter((x) => x.slug !== p.slug).slice(0, 3);
+  const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
 
   return (

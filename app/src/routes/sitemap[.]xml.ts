@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PRODUCTS } from '../lib/products'
+import { getCatalog } from '../lib/catalog.server'
 
 export const Route = createFileRoute('/sitemap.xml')({
   server: {
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/sitemap.xml')({
           '/testing',
           '/about',
           '/join',
-          ...PRODUCTS.map((p) => `/products/${p.slug}`),
+          ...(await getCatalog()).map((p) => `/products/${p.slug}`),
         ]
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',

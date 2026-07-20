@@ -1,12 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SiteLayout, Marquee, ProductCard, PRODUCTS } from "../components/site/Chrome";
+import { SiteLayout, Marquee, ProductCard } from "../components/site/Chrome";
+import { loadCatalog } from "../lib/api/catalog.functions";
 
 export const Route = createFileRoute("/")({
+  loader: async () => ({ products: await loadCatalog() }),
   component: Index,
 });
 
 function Index() {
-  const featured = PRODUCTS.slice(0, 6);
+  const { products } = Route.useLoaderData();
+  const featured = products.slice(0, 6);
   return (
     <SiteLayout>
       <header className="hero">

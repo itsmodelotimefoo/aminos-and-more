@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { s as subtotalCents, e as estimateTaxCents, t as taxRateFor, L as Link, f as formatUsd } from "./router-BNaIzqbm.js";
-import { u as useCart, S as SiteLayout, a as updateQty, r as removeLine } from "./Chrome-YlUHsn7M.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { s as subtotalCents, e as estimateTaxCents, t as taxRateFor, L as Link, f as formatUsd } from "./router-CDSweWN3.js";
+import { u as useCart, S as SiteLayout, a as updateQty, r as removeLine } from "./Chrome-1M4XhM36.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,6 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 const EMPTY_ADDR = {

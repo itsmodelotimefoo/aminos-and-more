@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { L as Link, P as PRODUCTS } from "./router-BNaIzqbm.js";
-import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-YlUHsn7M.js";
+import { V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { a as Route, L as Link } from "./router-CDSweWN3.js";
+import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-1M4XhM36.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,10 +8,14 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function Index() {
-  const featured = PRODUCTS.slice(0, 6);
+  const {
+    products
+  } = Route.useLoaderData();
+  const featured = products.slice(0, 6);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(SiteLayout, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("header", { className: "hero", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap grid", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [

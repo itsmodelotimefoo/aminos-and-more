@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { SiteLayout, ProductCard, PRODUCTS } from "../components/site/Chrome";
+import { SiteLayout, ProductCard } from "../components/site/Chrome";
+import { loadCatalog } from "../lib/api/catalog.functions";
 
 export const Route = createFileRoute("/catalog")({
+  loader: async () => ({ products: await loadCatalog() }),
   head: () => ({
     meta: [
       { title: "Catalog — Aminos & More" },
@@ -24,8 +26,9 @@ const FILTERS = [
 ] as const;
 
 function Catalog() {
+  const { products } = Route.useLoaderData();
   const [sel, setSel] = useState<string>("all");
-  const shown = PRODUCTS.filter((p) => sel === "all" || p.kind === sel);
+  const shown = products.filter((p) => sel === "all" || p.kind === sel);
   return (
     <SiteLayout active="catalog">
       <div className="pagehead wrap">

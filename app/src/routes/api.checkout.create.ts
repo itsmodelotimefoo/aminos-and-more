@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createOrderSchema, subtotalCents, type CartLine } from "../lib/checkout";
 import { estimateTaxCents } from "../lib/tax";
-import { getProduct } from "../lib/products";
+import { getCatalog } from "../lib/catalog.server";
 import { insertOrder, setInvoiceId } from "../lib/orders.server";
 import { createInvoice } from "../lib/nowpayments.server";
 import { mirrorUpsertOrder } from "../lib/supabase-mirror.server";
@@ -26,10 +26,12 @@ export const Route = createFileRoute("/api/checkout/create")({
         const d = parsed.data;
 
         // Re-price every line from the authoritative catalog (never trust the
-        // client's prices).
+        // client's prices). Same catalog the storefront renders — DB when
+        // CATALOG_FROM_DB=1, else static — so the charged price always matches.
+        const catalog = await getCatalog();
         const priced: CartLine[] = [];
         for (const item of d.items) {
-          const product = getProduct(item.slug);
+          const product = catalog.find((p) => p.slug === item.slug);
           if (!product) return json({ error: `Unknown item: ${item.slug}.` }, 400);
           const size = product.sizes.find((s) => s[0] === item.size);
           if (!size) return json({ error: `Invalid size for ${product.name}.` }, 400);

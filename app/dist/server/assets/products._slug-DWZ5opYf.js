@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { R as Route, g as getProduct, L as Link, P as PRODUCTS } from "./router-BNaIzqbm.js";
-import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-YlUHsn7M.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { b as Route, L as Link } from "./router-CDSweWN3.js";
+import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-1M4XhM36.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,13 +8,17 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function ProductPage() {
   const {
     slug
   } = Route.useParams();
-  const p = getProduct(slug);
+  const {
+    products
+  } = Route.useLoaderData();
+  const p = products.find((x) => x.slug === slug);
   const [sizeIdx, setSizeIdx] = reactExports.useState(0);
   const [added, setAdded] = reactExports.useState(false);
   const [qty, setQty] = reactExports.useState(1);
@@ -27,7 +31,7 @@ function ProductPage() {
       }, children: "Back to catalog" }) })
     ] }) });
   }
-  const more = PRODUCTS.filter((x) => x.slug !== p.slug).slice(0, 3);
+  const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
   return /* @__PURE__ */ jsxRuntimeExports.jsx(SiteLayout, { active: "catalog", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pdp", style: {

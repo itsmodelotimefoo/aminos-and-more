@@ -1,4 +1,5 @@
-import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet } from "./server-3boKDppH.js";
+import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet, a2 as TSS_SERVER_FUNCTION, a3 as getServerFnById, a4 as createServerFn } from "./server-BwwNE6Rr.js";
+import { g as getCatalog, a as getProduct } from "./catalog.server-DqFAIc20.js";
 import { env } from "cloudflare:workers";
 import { g as getOrder, u as updatePayment, s as setFulfillment, o as object, a as array, l as literal, b as string, n as number, i as insertOrder, c as setInvoiceId } from "./orders.server-DVmQ-msp.js";
 var reactUse = reactExports.use;
@@ -5411,7 +5412,7 @@ function RootComponent() {
   }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter$7 = () => import("./testing-BPNkmP4R.js");
+const $$splitComponentImporter$7 = () => import("./testing-A73p0MjJ.js");
 const Route$c = createFileRoute("/testing")({
   head: () => ({
     meta: [{
@@ -5423,169 +5424,6 @@ const Route$c = createFileRoute("/testing")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$7, "component")
 });
-const PRODUCTS = [
-  {
-    slug: "ghk-cu",
-    name: "GHK-Cu",
-    cls: "Copper-Binding Tripeptide",
-    kind: "peptide",
-    accent: "var(--copper)",
-    img: "/products/ghk-cu.png",
-    blurb: "The Coppersmith. Copper is the cofactor for lysyl oxidase — the enzyme that cross-links collagen and elastin into matrix.",
-    sizes: [["50 mg", 30], ["100 mg", 45]],
-    cas: "89030-95-5",
-    formula: "C14H22CuN6O4",
-    mw: "401.9 Da"
-  },
-  {
-    slug: "bpc-157",
-    name: "BPC-157",
-    cls: "Pentadecapeptide",
-    kind: "peptide",
-    accent: "var(--crimson)",
-    img: "/products/bpc-157.png",
-    blurb: "The Roadbuilder. Modulates eNOS / VEGFR2 angiogenesis; its triple-proline core resists proteolysis.",
-    sizes: [["5 mg", 36], ["10 mg", 66]],
-    cas: "137525-51-0",
-    formula: "C62H98N16O22",
-    mw: "1419.56 Da"
-  },
-  {
-    slug: "tb-500",
-    name: "TB-500",
-    cls: "Actin-Binding Peptide",
-    kind: "peptide",
-    accent: "var(--cyan)",
-    img: "/products/tb-500.png",
-    blurb: "The Framer. Sequesters G-actin and releases it to build F-actin filaments at the cell's leading edge.",
-    sizes: [["2 mg", 40], ["5 mg", 80], ["10 mg", 150]],
-    cas: "77591-33-4",
-    formula: "C212H350N56O78S",
-    mw: "4963.51 Da"
-  },
-  {
-    slug: "mots-c",
-    name: "MOTS-c",
-    cls: "Mitochondrial-Derived Peptide",
-    kind: "peptide",
-    accent: "var(--eblue)",
-    img: "/products/mots-c.png",
-    blurb: "The Power Runner. Activates AMPK via the folate–AICAR pathway; studied as an exercise-mimetic.",
-    sizes: [["10 mg", 65], ["20 mg", 125], ["40 mg", 220]],
-    cas: "1627580-64-6",
-    formula: "C101H152N28O22S2",
-    mw: "2174.57 Da"
-  },
-  {
-    slug: "nad",
-    name: "NAD+",
-    cls: "Coenzyme",
-    kind: "peptide",
-    accent: "var(--gold)",
-    img: "/products/nad.png",
-    blurb: "The energy-currency courier. A redox coenzyme central to cellular electron transfer and metabolism.",
-    sizes: [["500 mg", 50], ["1000 mg", 75]],
-    cas: "53-84-9",
-    formula: "C21H27N7O14P2",
-    mw: "663.43 Da"
-  },
-  {
-    slug: "ss-31",
-    name: "SS-31",
-    cls: "Mito-Targeted Tetrapeptide",
-    kind: "peptide",
-    accent: "var(--magenta)",
-    img: "/products/ss-31.png",
-    blurb: "The Membrane Guard. Binds cardiolipin on the inner mitochondrial membrane, stabilizing the cristae.",
-    sizes: [["10 mg", 100], ["50 mg", 310]],
-    cas: "736992-21-5",
-    formula: "C32H49N9O5",
-    mw: "639.80 Da"
-  },
-  {
-    slug: "3a",
-    name: "3A",
-    cls: "Triple Agonist · GIP·GLP-1·GCG",
-    kind: "peptide",
-    accent: "var(--amber)",
-    img: "/products/3a.png",
-    blurb: "One molecule engaging three receptors — GIP, GLP-1 and glucagon. Mechanism nomenclature only.",
-    sizes: [
-      ["5 mg", 70],
-      ["10 mg", 105],
-      ["15 mg", 130],
-      ["20 mg", 150],
-      ["30 mg", 190],
-      ["40 mg", 210],
-      ["60 mg", 340]
-    ],
-    cas: "2381089-83-2",
-    formula: "Verify by CoA",
-    mw: "Verify by CoA"
-  },
-  {
-    slug: "cjc-ipa",
-    name: "CJC-1295 + Ipamorelin",
-    cls: "GHRH · GHS-R Duo",
-    kind: "duo",
-    accent: "var(--green)",
-    tag: "Duo",
-    img: "/products/cjc-ipa.png",
-    blurb: "The gremlin & the herald. Ipamorelin engages the ghrelin (GHS-R) receptor; CJC-1295 is the GHRH release-signal.",
-    sizes: [["10 mg", 105]],
-    cas: "Blend",
-    formula: "Blend",
-    mw: "Combined"
-  },
-  {
-    slug: "the-stack",
-    name: "The Stack",
-    cls: "Dual Peptide · BPC-157 + TB-500",
-    kind: "duo",
-    accent: "var(--crimson)",
-    tag: "Duo",
-    img: "/products/the-stack.png",
-    blurb: "Two builders, one crew. Vessel-roads meet actin scaffold.",
-    sizes: [["10 mg", 100], ["20 mg", 200], ["30 mg", 270]],
-    cas: "Blend",
-    formula: "Blend",
-    mw: "Combined"
-  },
-  {
-    slug: "glow",
-    name: "GLOW",
-    cls: "GHK-Cu · BPC-157 · TB-500",
-    kind: "blend",
-    accent: "var(--eblue)",
-    tag: "Blend",
-    img: "/products/glow.png",
-    blurb: "The glow blend. Three foundations in one vial.",
-    sizes: [["70 mg", 170]],
-    cas: "Blend",
-    formula: "Blend",
-    mw: "Combined"
-  },
-  {
-    slug: "klow",
-    name: "KLOW",
-    cls: "KPV · GHK-Cu · BPC-157 · TB-500",
-    kind: "blend",
-    accent: "var(--purple)",
-    tag: "Blend",
-    img: "/products/klow.png",
-    blurb: "The king. GLOW with KPV added — the crowned four-compound blend.",
-    sizes: [["80 mg", 180]],
-    cas: "Blend",
-    formula: "Blend",
-    mw: "Combined"
-  }
-];
-function getProduct(slug) {
-  return PRODUCTS.find((p) => p.slug === slug);
-}
-function fromPrice(p) {
-  return "from $" + Math.min(...p.sizes.map((s) => s[1]));
-}
 const Route$b = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -5598,7 +5436,7 @@ const Route$b = createFileRoute("/sitemap.xml")({
           "/testing",
           "/about",
           "/join",
-          ...PRODUCTS.map((p) => `/products/${p.slug}`)
+          ...(await getCatalog()).map((p) => `/products/${p.slug}`)
         ];
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
@@ -5644,7 +5482,7 @@ const Route$a = createFileRoute("/robots.txt")({
     }
   }
 });
-const $$splitComponentImporter$6 = () => import("./join-DDq2Fjdc.js");
+const $$splitComponentImporter$6 = () => import("./join-CH_KBAdL.js");
 const Route$9 = createFileRoute("/join")({
   head: () => ({
     meta: [{
@@ -5656,7 +5494,7 @@ const Route$9 = createFileRoute("/join")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./checkout-success-Dmk4rW1V.js");
+const $$splitComponentImporter$5 = () => import("./checkout-success-DFGrjd7t.js");
 const Route$8 = createFileRoute("/checkout-success")({
   validateSearch: (s) => ({
     order: typeof s.order === "string" ? s.order : void 0
@@ -5671,7 +5509,7 @@ const Route$8 = createFileRoute("/checkout-success")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$5, "component")
 });
-const $$splitComponentImporter$4 = () => import("./checkout-wz4qCW_L.js");
+const $$splitComponentImporter$4 = () => import("./checkout-BhCrZzUc.js");
 const Route$7 = createFileRoute("/checkout")({
   head: () => ({
     meta: [{
@@ -5683,8 +5521,26 @@ const Route$7 = createFileRoute("/checkout")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$4, "component")
 });
-const $$splitComponentImporter$3 = () => import("./catalog-U84Sh_sf.js");
+var createSsrRpc = (functionId) => {
+  const url = "/_serverFn/" + functionId;
+  const serverFnMeta = { id: functionId };
+  const fn = async (...args) => {
+    return (await getServerFnById(functionId))(...args);
+  };
+  return Object.assign(fn, {
+    url,
+    serverFnMeta,
+    [TSS_SERVER_FUNCTION]: true
+  });
+};
+const loadCatalog = createServerFn({
+  method: "GET"
+}).handler(createSsrRpc("686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8"));
+const $$splitComponentImporter$3 = () => import("./catalog-oTlcZIDH.js");
 const Route$6 = createFileRoute("/catalog")({
+  loader: async () => ({
+    products: await loadCatalog()
+  }),
   head: () => ({
     meta: [{
       title: "Catalog — Aminos & More"
@@ -5695,7 +5551,7 @@ const Route$6 = createFileRoute("/catalog")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-const $$splitComponentImporter$2 = () => import("./about-DEV0nUhg.js");
+const $$splitComponentImporter$2 = () => import("./about-C8aZaH8x.js");
 const Route$5 = createFileRoute("/about")({
   head: () => ({
     meta: [{
@@ -5707,12 +5563,18 @@ const Route$5 = createFileRoute("/about")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-const $$splitComponentImporter$1 = () => import("./index-DwStl4ga.js");
+const $$splitComponentImporter$1 = () => import("./index-AC-xCCPS.js");
 const Route$4 = createFileRoute("/")({
+  loader: async () => ({
+    products: await loadCatalog()
+  }),
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./products._slug-CUpcK-jK.js");
+const $$splitComponentImporter = () => import("./products._slug-DWZ5opYf.js");
 const Route$3 = createFileRoute("/products/$slug")({
+  loader: async () => ({
+    products: await loadCatalog()
+  }),
   head: ({
     params
   }) => {
@@ -6245,9 +6107,10 @@ const Route2 = createFileRoute("/api/checkout/create")({
           );
         }
         const d = parsed.data;
+        const catalog = await getCatalog();
         const priced = [];
         for (const item of d.items) {
-          const product = getProduct(item.slug);
+          const product = catalog.find((p) => p.slug === item.slug);
           if (!product) return json({ error: `Unknown item: ${item.slug}.` }, 400);
           const size = product.sizes.find((s) => s[0] === item.size);
           if (!size) return json({ error: `Invalid size for ${product.name}.` }, 400);
@@ -6434,12 +6297,12 @@ const router = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProper
 }, Symbol.toStringTag, { value: "Module" }));
 export {
   Link as L,
-  PRODUCTS as P,
-  Route$3 as R,
-  fromPrice as a,
+  Route$6 as R,
+  Route$4 as a,
+  Route$3 as b,
+  createSsrRpc as c,
   estimateTaxCents as e,
   formatUsd as f,
-  getProduct as g,
   router as r,
   subtotalCents as s,
   taxRateFor as t,

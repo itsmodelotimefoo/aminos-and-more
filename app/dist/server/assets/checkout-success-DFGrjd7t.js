@@ -1,6 +1,6 @@
-import { a3 as TSS_SERVER_FUNCTION, a5 as getServerFnById, a4 as createServerFn, r as reactExports, V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { u as useSearch, f as formatUsd, L as Link } from "./router-BNaIzqbm.js";
-import { c as clearCart, S as SiteLayout } from "./Chrome-YlUHsn7M.js";
+import { a4 as createServerFn, r as reactExports, V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { c as createSsrRpc, u as useSearch, f as formatUsd, L as Link } from "./router-CDSweWN3.js";
+import { c as clearCart, S as SiteLayout } from "./Chrome-1M4XhM36.js";
 import { o as object, b as string } from "./orders.server-DVmQ-msp.js";
 import "node:async_hooks";
 import "node:stream";
@@ -9,19 +9,8 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
-var createSsrRpc = (functionId) => {
-  const url = "/_serverFn/" + functionId;
-  const serverFnMeta = { id: functionId };
-  const fn = async (...args) => {
-    return (await getServerFnById(functionId))(...args);
-  };
-  return Object.assign(fn, {
-    url,
-    serverFnMeta,
-    [TSS_SERVER_FUNCTION]: true
-  });
-};
 const getOrderStatus = createServerFn({
   method: "GET"
 }).inputValidator(object({

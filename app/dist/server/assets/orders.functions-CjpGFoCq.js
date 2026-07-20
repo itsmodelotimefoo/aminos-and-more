@@ -1,4 +1,5 @@
-import { a3 as TSS_SERVER_FUNCTION, a4 as createServerFn } from "./server-3boKDppH.js";
+import { c as createServerRpc } from "./createServerRpc-CsI-UfVU.js";
+import { a4 as createServerFn } from "./server-BwwNE6Rr.js";
 import { o as object, b as string, g as getOrder } from "./orders.server-DVmQ-msp.js";
 import "node:async_hooks";
 import "node:stream";
@@ -8,14 +9,6 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "cloudflare:workers";
-var createServerRpc = (serverFnMeta, splitImportFn) => {
-  const url = "/_serverFn/" + serverFnMeta.id;
-  return Object.assign(splitImportFn, {
-    url,
-    serverFnMeta,
-    [TSS_SERVER_FUNCTION]: true
-  });
-};
 const getOrderStatus_createServerFn_handler = createServerRpc({
   id: "3e225970265ca731cd1617a1ff3e08e3b988b9bd8e5797baff80e8296c6f3919",
   name: "getOrderStatus",

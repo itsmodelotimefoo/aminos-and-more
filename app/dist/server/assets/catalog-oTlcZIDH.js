@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-3boKDppH.js";
-import { S as SiteLayout, P as ProductCard } from "./Chrome-YlUHsn7M.js";
-import { P as PRODUCTS } from "./router-BNaIzqbm.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
+import { S as SiteLayout, P as ProductCard } from "./Chrome-1M4XhM36.js";
+import { R as Route } from "./router-CDSweWN3.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,6 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
+import "./catalog.server-DqFAIc20.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 const FILTERS = [{
@@ -24,8 +25,11 @@ const FILTERS = [{
   label: "Blends"
 }];
 function Catalog() {
+  const {
+    products
+  } = Route.useLoaderData();
   const [sel, setSel] = reactExports.useState("all");
-  const shown = PRODUCTS.filter((p) => sel === "all" || p.kind === sel);
+  const shown = products.filter((p) => sel === "all" || p.kind === sel);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(SiteLayout, { active: "catalog", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pagehead wrap", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "kicker", children: "The Cast · Full Catalog" }),

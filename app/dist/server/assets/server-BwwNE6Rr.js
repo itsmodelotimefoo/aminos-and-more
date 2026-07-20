@@ -17053,7 +17053,7 @@ function getResponse() {
 }
 var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-CN42abHp.js");
+  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-B7jGPNC3.js");
   const startManifest = tsrStartManifest();
   let routes = startManifest.routes;
   routes[rootRouteId];
@@ -17075,7 +17075,11 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "3e225970265ca731cd1617a1ff3e08e3b988b9bd8e5797baff80e8296c6f3919": {
     functionName: "getOrderStatus_createServerFn_handler",
-    importer: () => import("./orders.functions-D4s9NU26.js")
+    importer: () => import("./orders.functions-CjpGFoCq.js")
+  },
+  "686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8": {
+    functionName: "loadCatalog_createServerFn_handler",
+    importer: () => import("./catalog.functions-CakR5ZzG.js")
   }
 };
 async function getServerFnById(id, access) {
@@ -18316,8 +18320,8 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-BNaIzqbm.js").then((n2) => n2.r),
-    import("./start-Cq0umXJu.js"),
+    import("./router-CDSweWN3.js").then((n2) => n2.r),
+    import("./start-DFW9kF_d.js"),
     import("./empty-plugin-adapters-BFgPZ6_d.js")
   ]);
   return {
@@ -18719,10 +18723,10 @@ export {
   isRedirect as a,
   resolveManifestCssLink as a0,
   Outlet as a1,
-  createMiddleware as a2,
-  TSS_SERVER_FUNCTION as a3,
+  TSS_SERVER_FUNCTION as a2,
+  getServerFnById as a3,
   createServerFn as a4,
-  getServerFnById as a5,
+  createMiddleware as a5,
   server as a6,
   isNotFound as b,
   invariant as c,

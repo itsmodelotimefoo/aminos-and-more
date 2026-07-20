@@ -98,6 +98,23 @@ drop trigger if exists orders_touch on orders;
 create trigger orders_touch before update on orders
   for each row execute function touch_updated_at();
 
+-- ---------- lab results / COAs by lot ---------------------------------------
+-- "Tested by lot" — each production lot's certificate of analysis. Surfaced at
+-- fulfillment so the right COA ships with the right lot.
+create table if not exists lots (
+  id         bigint generated always as identity primary key,
+  lot_code   text not null,
+  sku        text references products(sku) on delete set null,
+  purity     numeric,                          -- e.g. 99.2 (percent)
+  tested_on  date,
+  result     text not null default 'pass',     -- pass | fail | pending
+  coa_url    text,                             -- link to the COA PDF/image
+  qty        integer,
+  notes      text,
+  created_at timestamptz not null default now()
+);
+create index if not exists lots_sku_idx on lots (sku, tested_on desc);
+
 -- ---------- staff allowlist (drives RLS) ------------------------------------
 create table if not exists staff (
   user_id    uuid primary key references auth.users(id) on delete cascade,
@@ -120,12 +137,13 @@ alter table inventory      enable row level security;
 alter table stores         enable row level security;
 alter table products       enable row level security;
 alter table store_products enable row level security;
+alter table lots           enable row level security;
 alter table staff          enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['orders','order_items','inventory','stores','products','store_products'] loop
+  foreach t in array array['orders','order_items','inventory','stores','products','store_products','lots'] loop
     execute format('drop policy if exists staff_all on %I;', t);
     execute format(
       'create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff());', t);

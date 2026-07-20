@@ -27,6 +27,11 @@ function toast(msg) {
   let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); }
   t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 1900);
 }
+function closeSheet() { const r = $('#modal-root'); if (r) r.innerHTML = ''; }
+function openSheet(inner) {
+  const r = $('#modal-root');
+  r.innerHTML = `<div class="sheet-backdrop" data-action="close-sheet"><div class="sheet" data-stop="1"><div class="grip"></div>${inner}</div></div>`;
+}
 const STATUSES = ['pending', 'paid', 'fulfilled', 'failed', 'expired'];
 const STATUS_LABEL = { pending: 'Pending', paid: 'Paid', fulfilled: 'Fulfilled', failed: 'Failed', expired: 'Expired' };
 
@@ -65,7 +70,13 @@ const demo = (() => {
     { sku: 'NADP', on_hand: 30, products: { name: 'NAD+', peptide: 'NAD+' } },
     { sku: 'GLOW', on_hand: 50, products: { name: 'GLOW Blend', peptide: 'GLOW' } },
   ];
-  return { stores, orders, inventory };
+  const lots = [
+    { id: 1, lot_code: 'BPC157-2405A', sku: 'BPC157', purity: 99.2, tested_on: '2025-06-30', result: 'pass', coa_url: 'https://example.com/coa/BPC157-2405A.pdf' },
+    { id: 2, lot_code: 'TB500-2405A', sku: 'TB500', purity: 98.7, tested_on: '2025-07-08', result: 'pass', coa_url: 'https://example.com/coa/TB500-2405A.pdf' },
+    { id: 3, lot_code: 'GHKCU-2404A', sku: 'GHKCU', purity: 99.5, tested_on: '2025-06-10', result: 'pass', coa_url: 'https://example.com/coa/GHKCU-2404A.pdf' },
+    { id: 4, lot_code: 'MOTSC-2405B', sku: 'MOTSC', purity: 97.9, tested_on: '2025-07-12', result: 'pending', coa_url: '' },
+  ];
+  return { stores, orders, inventory, lots };
 })();
 
 /* ---------- backend: Supabase REST --------------------------------- */
@@ -101,6 +112,15 @@ const api = {
     const r = await sb('/orders?id=eq.' + encodeURIComponent(id), {
       method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch),
     });
+    return r[0];
+  },
+  async lots() {
+    if (!LIVE) return demo.lots;
+    return sb('/lots?select=*&order=tested_on.desc');
+  },
+  async addLot(lot) {
+    if (!LIVE) { demo.lots.unshift({ id: Date.now(), ...lot }); return lot; }
+    const r = await sb('/lots', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(lot) });
     return r[0];
   },
   async adjustInventory(sku, current, delta) {
@@ -162,7 +182,7 @@ function orderRow(o) {
 }
 
 /* ---------- views --------------------------------------------------- */
-let cache = { orders: null, inventory: null };
+let cache = { orders: null, inventory: null, lots: undefined };
 
 /* ---------- Home / command dashboard -------------------------------- */
 async function viewHome() {
@@ -209,6 +229,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
+    <button class="linkbtn" data-action="nav" data-to="lab"><span class="ico">🧪</span> Lab · COAs</button>
   </div>`;
 
   // recent orders
@@ -353,6 +374,7 @@ async function viewOrder(id) {
   let o;
   try { o = await api.order(id); } catch (e) { return renderError(e, 'orders'); }
   if (!o) { go('orders'); return; }
+  await loadLots(); // for per-item COA links
   const s = state.storesById[o.store_slug] || {};
   const accent = s.label_profile?.accent || '#5b6cff';
   const packaging = s.label_profile?.packaging || 'See brand packaging profile';
@@ -369,7 +391,11 @@ async function viewOrder(id) {
 
   // items
   html += `<div class="section-title">Items</div><div class="card">`;
-  html += (o.items || []).map((i) => `<div class="line"><span>${esc(i.name || i.sku)}${i.size ? ` · ${esc(i.size)}` : ''}</span><span class="q">×${i.qty || 1} · ${money((i.unit_cents || 0) * (i.qty || 1))}</span></div>`).join('') || '<div class="hint">No line items.</div>';
+  html += (o.items || []).map((i) => {
+    const l = latestLot(i.sku);
+    const coa = l && l.coa_url ? ` <a href="${esc(l.coa_url)}" target="_blank" rel="noopener" class="coa-link">COA ${esc(l.lot_code)}↗</a>` : '';
+    return `<div class="line"><span>${esc(i.name || i.sku)}${i.size ? ` · ${esc(i.size)}` : ''}${coa}</span><span class="q">×${i.qty || 1} · ${money((i.unit_cents || 0) * (i.qty || 1))}</span></div>`;
+  }).join('') || '<div class="hint">No line items.</div>';
   html += `<div class="kv" style="margin-top:6px"><span class="k">Subtotal</span><span class="v">${money(o.subtotal_cents)}</span></div>
     <div class="kv"><span class="k">Shipping</span><span class="v">${money(o.shipping_cents)}</span></div>
     ${o.tax_cents ? `<div class="kv"><span class="k">Tax</span><span class="v">${money(o.tax_cents)}</span></div>` : ''}
@@ -638,6 +664,75 @@ async function viewRestock() {
   root.innerHTML = html;
 }
 
+/* ---------- Lab / COAs by lot --------------------------------------- */
+async function loadLots() {
+  if (cache.lots !== undefined) return cache.lots;
+  try { cache.lots = await api.lots(); } catch (e) { cache.lots = e.status === 404 || e.status === 400 ? null : []; }
+  return cache.lots;
+}
+// latest passing lot for a sku (for order-detail COA surfacing)
+function latestLot(sku) {
+  const lots = cache.lots;
+  if (!Array.isArray(lots)) return null;
+  return lots.filter((l) => l.sku === sku && l.result === 'pass').sort((a, b) => (b.tested_on || '').localeCompare(a.tested_on || ''))[0] || null;
+}
+function lotBadge(result) {
+  const map = { pass: 'st-fulfilled', fail: 'st-failed', pending: 'st-pending' };
+  return `<span class="pill ${map[result] || 'st-idle'}" style="font-size:11px">${esc((result || '').toUpperCase())}</span>`;
+}
+
+async function viewLab() {
+  const root = $('#app');
+  root.innerHTML = topbar('Lab · COAs', 'Tested by lot') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
+  const lots = await loadLots();
+
+  let html = topbar('Lab · COAs', 'Tested by lot', { left: `<button class="back-btn" data-action="back">‹</button>`, right: `<button class="icon-btn" data-action="add-lot" aria-label="Add lot">＋</button>` });
+  html += `<div class="view">`;
+  if (lots === null) {
+    html += `<div class="card"><div class="empty"><div class="big">🧪</div><h3>Enable the Lab module</h3><p>Run the <b>lots</b> table migration in Supabase (db/schema.sql) to track COAs by lot.</p></div></div>`;
+    html += `</div>` + bottomNav('inventory');
+    root.innerHTML = html; return;
+  }
+  const pending = lots.filter((l) => l.result === 'pending').length;
+  const passed = lots.filter((l) => l.result === 'pass').length;
+  html += `<div class="stats"><div class="stat green"><div class="n">${passed}</div><div class="l">Passing lots</div></div><div class="stat ${pending ? 'amber' : ''}"><div class="n">${pending}</div><div class="l">Awaiting result</div></div></div>`;
+  html += `<div class="section-title">Lots</div>`;
+  if (!lots.length) {
+    html += `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">🧪</div><h3>No lots yet</h3><p>Add a lot with its COA using ＋.</p></div></div>`;
+  } else {
+    // group by sku
+    const bySku = {};
+    lots.forEach((l) => { (bySku[l.sku || '—'] = bySku[l.sku || '—'] || []).push(l); });
+    html += Object.keys(bySku).map((sku) => {
+      const prod = (cache.inventory || []).find((i) => i.sku === sku)?.products?.name || sku;
+      return `<div class="card"><div class="section-title" style="margin:0 0 8px 0">${esc(prod)} <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${esc(sku)}</span></div>
+        ${bySku[sku].map((l) => `<div class="lot">
+          <div class="lot-top"><span class="lot-code">${esc(l.lot_code)}</span>${lotBadge(l.result)}</div>
+          <div class="lot-meta"><span>Purity <b>${l.purity != null ? l.purity + '%' : '—'}</b></span><span>Tested ${l.tested_on ? esc(l.tested_on) : '—'}</span></div>
+          ${l.coa_url ? `<a class="linkbtn" style="margin-top:8px" href="${esc(l.coa_url)}" target="_blank" rel="noopener"><span class="ico">▤</span> Open COA</a>` : `<div class="hint" style="margin-top:6px">No COA attached</div>`}
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  }
+  html += `</div>` + bottomNav('inventory');
+  root.innerHTML = html;
+}
+
+function openAddLot() {
+  const skus = (cache.inventory || []).map((i) => `<option value="${esc(i.sku)}">${esc((i.products?.name || i.sku))} (${esc(i.sku)})</option>`).join('');
+  openSheet(`<h3>Add lot / COA</h3>
+    <form data-action="submit-lot">
+      <div class="field"><label>Lot code</label><input class="input" name="lot_code" placeholder="BPC157-2405A" autocomplete="off" required /></div>
+      <div class="field"><label>Product</label><select class="selectbox" name="sku">${skus}</select></div>
+      <div class="field"><label>Purity %</label><input class="input" name="purity" type="number" step="0.1" inputmode="decimal" placeholder="99.2" autocomplete="off" /></div>
+      <div class="field"><label>Tested on</label><input class="input" name="tested_on" type="date" autocomplete="off" /></div>
+      <div class="field"><label>Result</label><select class="selectbox" name="result"><option value="pass">Pass</option><option value="pending">Pending</option><option value="fail">Fail</option></select></div>
+      <div class="field"><label>COA URL</label><input class="input" name="coa_url" placeholder="https://…" autocomplete="off" /></div>
+      <button class="btn primary" type="submit">Save lot</button>
+    </form>`);
+  setTimeout(() => $('#modal-root input[name=lot_code]')?.focus(), 60);
+}
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
@@ -711,6 +806,7 @@ async function render() {
   if (seg === 'customers') return viewCustomers();
   if (seg === 'customer') return viewCustomer(arg);
   if (seg === 'restock') return viewRestock();
+  if (seg === 'lab') return viewLab();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -718,9 +814,13 @@ async function render() {
 
 /* ---------- events -------------------------------------------------- */
 document.addEventListener('click', async (e) => {
+  const backdrop = e.target.closest('[data-action="close-sheet"]');
+  if (backdrop && !e.target.closest('[data-stop]')) { closeSheet(); return; }
   const el = e.target.closest('[data-action]'); if (!el) return;
   const { action, to, id, val, status } = el.dataset;
   switch (action) {
+    case 'add-lot': openAddLot(); break;
+    case 'close-sheet': closeSheet(); break;
     case 'nav': go(to); break;
     case 'back': history.length > 1 ? history.back() : go('orders'); break;
     case 'open-order': go('order/' + id); break;
@@ -785,6 +885,25 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const lot = e.target.closest('[data-action="submit-lot"]');
+  if (lot) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(lot).entries());
+    const btn = lot.querySelector('button[type=submit]'); btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      await api.addLot({
+        lot_code: (d.lot_code || '').trim(),
+        sku: d.sku || null,
+        purity: d.purity ? Number(d.purity) : null,
+        tested_on: d.tested_on || null,
+        result: d.result || 'pass',
+        coa_url: (d.coa_url || '').trim() || null,
+      });
+      cache.lots = undefined;
+      closeSheet(); toast('Lot saved'); viewLab();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Save lot'; toast(err.status === 401 ? 'Session expired' : 'Save failed'); }
     return;
   }
   const rec = e.target.closest('[data-action="receive"]');

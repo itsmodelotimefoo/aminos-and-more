@@ -46,5 +46,12 @@ on conflict (store_slug, sku) do update
   set display_name = excluded.display_name, price_cents = excluded.price_cents,
       packaging = excluded.packaging;
 
+-- Example lab results / COAs (edit or remove).
+insert into lots (lot_code, sku, purity, tested_on, result, coa_url) values
+  ('BPC157-2405A', 'BPC157', 99.2, current_date - 20, 'pass', 'https://example.com/coa/BPC157-2405A.pdf'),
+  ('TB500-2405A',  'TB500',  98.7, current_date - 12, 'pass', 'https://example.com/coa/TB500-2405A.pdf'),
+  ('GHKCU-2404A',  'GHKCU',  99.5, current_date - 40, 'pass', 'https://example.com/coa/GHKCU-2404A.pdf')
+on conflict do nothing;
+
 -- To grant a teammate Hub access after they sign in once:
 --   insert into staff (user_id, email) values ('<auth-user-uuid>', 'you@co.com');

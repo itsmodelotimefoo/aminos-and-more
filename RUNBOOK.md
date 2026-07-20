@@ -48,7 +48,11 @@ call is wrapped so it can never fail a checkout or IPN webhook.
    (Settings → API).
 
 ### 2. Deploy the Hub
-1. Put the **URL + anon key** into `hub/config.js`.
+1. Create your config (git-ignored, so keys never get committed) and fill in the
+   **URL + anon key**:
+   ```bash
+   cd hub && cp config.example.js config.js   # then edit config.js
+   ```
 2. Deploy as its own worker on its own subdomain (e.g. `ops.yourdomain.com`):
    ```bash
    cd hub && npx wrangler deploy

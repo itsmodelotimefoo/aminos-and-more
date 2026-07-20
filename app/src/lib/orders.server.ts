@@ -3,7 +3,16 @@
 import { bindings } from "./bindings.server";
 import type { CartLine } from "./checkout";
 
-export type OrderStatus = "pending" | "paid" | "fulfilled" | "failed" | "expired";
+// "refunded" is deliberately distinct from "failed": a refund means the order
+// genuinely paid and the money was returned, whereas "failed" means payment
+// never succeeded. Conflating them misreports revenue.
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "fulfilled"
+  | "failed"
+  | "expired"
+  | "refunded";
 
 export type OrderRow = {
   id: string;

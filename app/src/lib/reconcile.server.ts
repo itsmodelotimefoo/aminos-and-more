@@ -42,8 +42,11 @@ export async function advanceOrder(
   const paymentStatus = String(payment.payment_status ?? "");
   const mapped = mapPaymentStatus(paymentStatus);
 
-  // Never regress a completed order.
-  if (order.status === "fulfilled") {
+  // Never regress a completed order — EXCEPT to record a refund. A refund can
+  // legitimately land after shipping (chargeback / goodwill return); silently
+  // dropping it would leave the books saying we were paid. Tracking columns are
+  // untouched, so the shipment record survives the status change.
+  if (order.status === "fulfilled" && mapped !== "refunded") {
     return { orderId: order.id, from, to: "fulfilled", fulfilled: true, note: "already fulfilled" };
   }
 

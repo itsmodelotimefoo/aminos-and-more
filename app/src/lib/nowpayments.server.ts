@@ -125,13 +125,20 @@ export async function verifyIpnSignature(
 }
 
 // Map NOWPayments payment_status to our order status.
-export function mapPaymentStatus(status: string): "pending" | "paid" | "failed" | "expired" {
+export function mapPaymentStatus(
+  status: string,
+): "pending" | "paid" | "failed" | "expired" | "refunded" {
   switch (status) {
     case "finished":
     case "confirmed":
       return "paid";
-    case "failed":
+    // A refund acts on an order that GENUINELY PAID — money arrived and was
+    // sent back. Never fold this into "failed" (which means payment never
+    // succeeded): doing so erases the fact that money moved and misreports
+    // revenue. It is its own terminal state.
     case "refunded":
+      return "refunded";
+    case "failed":
       return "failed";
     case "expired":
       return "expired";

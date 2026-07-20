@@ -31,7 +31,7 @@ const STATUSES = ['pending', 'paid', 'fulfilled', 'failed', 'expired'];
 const STATUS_LABEL = { pending: 'Pending', paid: 'Paid', fulfilled: 'Fulfilled', failed: 'Failed', expired: 'Expired' };
 
 /* ---------- state --------------------------------------------------- */
-const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all' };
+const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all', search: '' };
 
 /* ---------- backend: demo fixtures ---------------------------------- */
 const demo = (() => {
@@ -95,12 +95,21 @@ const api = {
     if (!LIVE) return demo.inventory;
     return sb('/inventory?select=sku,on_hand,reserved,products(name,peptide)&order=on_hand.asc');
   },
-  async setStatus(id, status) {
-    if (!LIVE) { const o = demo.orders.find((x) => x.id === id); if (o) o.status = status; return o; }
+  async updateOrder(id, patch) {
+    if (!LIVE) { const o = demo.orders.find((x) => x.id === id); if (o) Object.assign(o, patch); return o; }
     const r = await sb('/orders?id=eq.' + encodeURIComponent(id), {
-      method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ status }),
+      method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch),
     });
     return r[0];
+  },
+  async adjustInventory(sku, current, delta) {
+    const next = Math.max(0, (current || 0) + delta);
+    if (!LIVE) { const it = demo.inventory.find((x) => x.sku === sku); if (it) it.on_hand = next; return next; }
+    await sb('/inventory?sku=eq.' + encodeURIComponent(sku), {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({ on_hand: next, updated_at: new Date().toISOString() }),
+    });
+    return next;
   },
 };
 
@@ -168,12 +177,15 @@ async function viewOrders() {
   const toShip = orders.filter((o) => o.status === 'paid').length;
   const lowStock = inv.filter((i) => (i.on_hand || 0) <= 10).length;
 
+  const q = state.search.trim().toLowerCase();
   const filtered = orders.filter((o) =>
     (state.filterBrand === 'all' || o.store_slug === state.filterBrand) &&
-    (state.filterStatus === 'all' || o.status === state.filterStatus));
+    (state.filterStatus === 'all' || o.status === state.filterStatus) &&
+    (!q || o.id.toLowerCase().includes(q) || (o.email || '').toLowerCase().includes(q) ||
+      (o.ship_name || '').toLowerCase().includes(q) || (o.tracking_number || '').toLowerCase().includes(q)));
 
   let html = topbar('Orders', LIVE ? 'Live · all brands' : 'Demo data · all brands', {
-    right: `<button class="icon-btn" data-action="refresh" aria-label="Refresh">⟳</button>`,
+    right: `<button class="icon-btn" data-action="export" aria-label="Export CSV" title="Export CSV">⤓</button><button class="icon-btn" data-action="refresh" aria-label="Refresh" style="margin-left:8px">⟳</button>`,
   });
   html += `<div class="view">`;
   if (!LIVE) html += `<div class="banner">Showing <b>demo data</b>. Add your Supabase URL + anon key in <b>config.js</b> to go live.</div>`;
@@ -188,10 +200,13 @@ async function viewOrders() {
   html += `<div class="chips">${chip('brand', 'all', 'All brands')}${state.stores.map((s) => chip('brand', s.slug, s.name)).join('')}</div>`;
   // status filter
   html += `<div class="chips">${chip('status', 'all', 'All')}${STATUSES.map((s) => chip('status', s, STATUS_LABEL[s])).join('')}</div>`;
+  // search
+  html += `<input class="input" id="order-search" placeholder="Search order #, email, name, tracking…" value="${esc(state.search)}" style="margin-bottom:12px" autocomplete="off" />`;
 
   if (!filtered.length) {
-    html += `<div class="card"><div class="empty"><div class="big">📦</div><h3>No orders</h3><p>Nothing matches this filter yet.</p></div></div>`;
+    html += `<div class="card"><div class="empty"><div class="big">🔍</div><h3>No matches</h3><p>${q ? 'No orders match your search/filters.' : 'Nothing matches this filter yet.'}</p></div></div>`;
   } else {
+    html += `<div class="hint" style="margin:0 4px 8px">${filtered.length} order${filtered.length === 1 ? '' : 's'}${q ? ' matching “' + esc(state.search) + '”' : ''}</div>`;
     html += `<div class="card" style="padding:6px 16px">${filtered.map(orderRow).join('')}</div>`;
   }
   html += `</div>` + bottomNav('orders');
@@ -252,10 +267,17 @@ async function viewOrder(id) {
   </div>`;
 
   // actions
-  html += `<div class="btn-row" style="margin-top:6px">`;
-  if (o.status !== 'fulfilled') html += `<button class="btn primary" data-action="mark" data-id="${esc(o.id)}" data-status="fulfilled">Mark fulfilled</button>`;
-  if (o.status === 'pending') html += `<button class="btn" data-action="mark" data-id="${esc(o.id)}" data-status="paid">Mark paid</button>`;
-  html += `</div>`;
+  if (o.status === 'fulfilled') {
+    html += `<button class="btn" data-action="mark" data-id="${esc(o.id)}" data-status="paid">Reopen (mark paid)</button>`;
+  } else {
+    html += `<form data-action="ship" data-id="${esc(o.id)}" class="card" style="margin-top:6px">
+      <div class="section-title" style="margin:0 0 10px 4px">Mark shipped</div>
+      <div class="field" style="margin-bottom:10px"><input class="input" name="carrier" placeholder="Carrier (e.g. USPS)" value="${esc(o.ship_carrier || '')}" autocomplete="off" /></div>
+      <div class="field" style="margin-bottom:12px"><input class="input" name="tracking" placeholder="Tracking number" value="${esc(o.tracking_number || '')}" autocomplete="off" /></div>
+      <button class="btn primary" type="submit">Mark shipped &amp; fulfilled</button>
+    </form>`;
+    if (o.status === 'pending') html += `<button class="btn" style="margin-top:10px" data-action="mark" data-id="${esc(o.id)}" data-status="paid">Mark paid</button>`;
+  }
 
   html += `</div>`;
   root.innerHTML = html + bottomNav('orders');
@@ -271,7 +293,10 @@ async function viewInventory() {
   html += inv.map((i) => {
     const n = i.on_hand || 0; const cls = n === 0 ? 'out' : n <= 10 ? 'low' : '';
     const nm = i.products?.name || i.sku;
-    return `<div class="inv"><div class="in"><div class="nm">${esc(nm)}</div><div class="sk">${esc(i.sku)}</div></div><div class="ct ${cls}">${n}${n === 0 ? ' · out' : n <= 10 ? ' · low' : ''}</div></div>`;
+    return `<div class="inv"><div class="in"><div class="nm">${esc(nm)}</div><div class="sk">${esc(i.sku)}</div></div>
+      <button class="invbtn" data-action="inv" data-sku="${esc(i.sku)}" data-cur="${n}" data-delta="-1" aria-label="Decrease">−</button>
+      <div class="ct ${cls}" style="min-width:34px;text-align:center">${n}</div>
+      <button class="invbtn" data-action="inv" data-sku="${esc(i.sku)}" data-cur="${n}" data-delta="1" aria-label="Increase">+</button></div>`;
   }).join('') || '<div class="hint">No inventory rows.</div>';
   html += `</div></div>` + bottomNav('inventory');
   root.innerHTML = html;
@@ -341,20 +366,88 @@ document.addEventListener('click', async (e) => {
     case 'filter-status': state.filterStatus = val; viewOrders(); break;
     case 'refresh': cache.orders = cache.inventory = null; toast('Refreshed'); render(); break;
     case 'signout': signOut(); break;
+    case 'export': exportCsv(); break;
     case 'mark':
-      try { await api.setStatus(id, status); toast('Marked ' + status); cache.orders = null; viewOrder(id); }
+      try { await api.updateOrder(id, { status }); toast('Marked ' + status); cache.orders = null; viewOrder(id); }
       catch (err) { toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
       break;
+    case 'inv': {
+      const btn = el; btn.disabled = true;
+      try {
+        const next = await api.adjustInventory(el.dataset.sku, Number(el.dataset.cur), Number(el.dataset.delta));
+        cache.inventory = null;
+        toast(el.dataset.sku + ' → ' + next);
+        viewInventory();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+      break;
+    }
   }
 });
 document.addEventListener('submit', async (e) => {
-  const el = e.target.closest('[data-action="login"]'); if (!el) return;
-  e.preventDefault();
-  const d = Object.fromEntries(new FormData(el).entries());
-  const btn = el.querySelector('button[type=submit]'); btn.textContent = 'Signing in…'; btn.disabled = true;
-  try { await signIn(d.email, d.password); location.hash = ''; render(); }
-  catch (err) { viewLogin(err.message); }
+  const login = e.target.closest('[data-action="login"]');
+  const ship = e.target.closest('[data-action="ship"]');
+  if (login) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(login).entries());
+    const btn = login.querySelector('button[type=submit]'); btn.textContent = 'Signing in…'; btn.disabled = true;
+    try { await signIn(d.email, d.password); location.hash = ''; render(); }
+    catch (err) { viewLogin(err.message); }
+    return;
+  }
+  if (ship) {
+    e.preventDefault();
+    const id = ship.dataset.id;
+    const d = Object.fromEntries(new FormData(ship).entries());
+    const btn = ship.querySelector('button[type=submit]'); btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      await api.updateOrder(id, {
+        status: 'fulfilled',
+        ship_carrier: d.carrier || null,
+        tracking_carrier: d.carrier || null,
+        tracking_number: d.tracking || null,
+      });
+      toast('Marked shipped'); cache.orders = null; viewOrder(id);
+    } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
 });
+
+/* live search (debounced re-render, keeps focus) */
+document.addEventListener('input', (e) => {
+  const s = e.target.closest('#order-search'); if (!s) return;
+  state.search = s.value;
+  clearTimeout(window.__searchT);
+  window.__searchT = setTimeout(async () => {
+    await viewOrders();
+    const inp = $('#order-search');
+    if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
+  }, 160);
+});
+
+/* ---------- CSV export --------------------------------------------- */
+function exportCsv() {
+  const orders = cache.orders || [];
+  const q = state.search.trim().toLowerCase();
+  const rows = orders.filter((o) =>
+    (state.filterBrand === 'all' || o.store_slug === state.filterBrand) &&
+    (state.filterStatus === 'all' || o.status === state.filterStatus) &&
+    (!q || o.id.toLowerCase().includes(q) || (o.email || '').toLowerCase().includes(q) ||
+      (o.ship_name || '').toLowerCase().includes(q) || (o.tracking_number || '').toLowerCase().includes(q)));
+  if (!rows.length) { toast('No orders to export'); return; }
+  const cols = ['id', 'store_slug', 'status', 'created_at', 'email', 'ship_name', 'ship_city', 'ship_state',
+    'total_cents', 'ship_carrier', 'tracking_number', 'np_payment_status', 'pay_currency'];
+  const cell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const csv = [cols.join(',')].concat(rows.map((o) => cols.map((c) => cell(o[c])).join(','))).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `orders-${state.filterBrand}-${state.filterStatus}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast(`Exported ${rows.length} order${rows.length === 1 ? '' : 's'}`);
+}
 
 /* ---------- boot ---------------------------------------------------- */
 restoreSession();

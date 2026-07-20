@@ -95,6 +95,8 @@ a{color:inherit;text-decoration:none}
 .inv:last-child{border-bottom:none}
 .inv .in{flex:1}.inv .in .nm{font-weight:650;font-size:14.5px}.inv .in .sk{font-size:12px;color:var(--faint)}
 .inv .ct{font-weight:750;font-size:16px}.inv .ct.low{color:var(--amber)}.inv .ct.out{color:var(--red)}
+.invbtn{width:34px;height:34px;flex-shrink:0;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:19px;line-height:1;display:grid;place-items:center}
+.invbtn:active{transform:scale(.92)}.invbtn:disabled{opacity:.5}
 
 .empty{text-align:center;padding:44px 24px;color:var(--muted)}
 .empty .big{font-size:44px;margin-bottom:12px}.empty h3{color:var(--text);margin:0 0 6px;font-size:18px}.empty p{margin:0 0 18px;font-size:14px}

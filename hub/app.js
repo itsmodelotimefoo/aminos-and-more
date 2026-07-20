@@ -31,7 +31,7 @@ const STATUSES = ['pending', 'paid', 'fulfilled', 'failed', 'expired'];
 const STATUS_LABEL = { pending: 'Pending', paid: 'Paid', fulfilled: 'Fulfilled', failed: 'Failed', expired: 'Expired' };
 
 /* ---------- state --------------------------------------------------- */
-const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all', search: '', range: '30d', anTable: false };
+const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all', search: '', range: '30d', anTable: false, custSearch: '' };
 let analyticsDays = []; // stash for the time-chart tap readout
 
 /* ---------- backend: demo fixtures ---------------------------------- */
@@ -55,7 +55,7 @@ const demo = (() => {
     mk('AM-5E6F7G8H', 'aminos', 'fulfilled', 3 * 1440, 'alex@example.com', [{ sku: 'GHKCU', name: 'GHK-Cu (50mg)', size: '50mg', qty: 1, unit_cents: 5500 }], 6400, { tracking: '9400111899223', label: '#', name: 'Alex Kim' }),
     mk('WL-2Q3R4S5T', 'getwll', 'pending', 6, 'chris@example.com', [{ sku: 'BPC157', name: 'WLL BPC-157 5mg', size: '5mg', qty: 1, unit_cents: 6900 }], 7800, { name: 'Chris Park' }),
     mk('AM-8K9L0M1N', 'aminos', 'fulfilled', 6 * 1440, 'taylor@example.com', [{ sku: 'MOTSC', name: 'MOTS-c (10mg)', size: '10mg', qty: 3, unit_cents: 8000 }], 24900, { tracking: '9400111899999', label: '#', name: 'Taylor Fox' }),
-    mk('WL-3U4V5W6X', 'getwll', 'paid', 4 * 1440, 'morgan@example.com', [{ sku: 'GLOW', name: 'WLL GLOW Blend', size: 'kit', qty: 1, unit_cents: 12000 }], 12900, { name: 'Morgan Bell' }),
+    mk('WL-3U4V5W6X', 'getwll', 'paid', 4 * 1440, 'jordan@example.com', [{ sku: 'GLOW', name: 'WLL GLOW Blend', size: 'kit', qty: 1, unit_cents: 12000 }], 12900, { name: 'Jordan Lee' }),
   ];
   const inventory = [
     { sku: 'BPC157', on_hand: 120, products: { name: 'BPC-157', peptide: 'BPC-157' } },
@@ -130,7 +130,7 @@ function signOut() { state.session = null; localStorage.removeItem(TOKEN_KEY); l
 function restoreSession() { try { const s = JSON.parse(localStorage.getItem(TOKEN_KEY)); if (s?.access_token) state.session = s; } catch (e) {} }
 
 /* ---------- routing ------------------------------------------------- */
-const route = () => { const h = location.hash.replace(/^#\/?/, ''); const [seg, arg] = h.split('/'); return { seg: seg || 'orders', arg }; };
+const route = () => { const h = location.hash.replace(/^#\/?/, ''); const [seg, arg] = h.split('/'); return { seg: seg || 'home', arg }; };
 const go = (p) => { location.hash = p; };
 window.addEventListener('hashchange', render);
 
@@ -148,7 +148,7 @@ function bottomNav(active) {
   const shipCount = (cache.orders || []).filter((o) => o.status === 'paid').length;
   const badge = shipCount ? `<span class="navbadge">${shipCount}</span>` : '';
   const item = (to, icon, label, extra = '') => `<a data-action="nav" data-to="${to}" class="${active === to ? 'sel' : ''}"><span class="ni">${icon}${extra}</span>${label}</a>`;
-  return `<nav class="nav">${item('orders', '▤', 'Orders')}${item('ship', '⇥', 'To Ship', badge)}${item('inventory', '▦', 'Inventory')}${item('settings', '⚙', 'Settings')}</nav>`;
+  return `<nav class="nav">${item('home', '◇', 'Home')}${item('orders', '▤', 'Orders')}${item('ship', '⇥', 'Ship', badge)}${item('inventory', '▦', 'Stock')}${item('settings', '⚙', 'More')}</nav>`;
 }
 function orderRow(o) {
   const count = (o.items || []).reduce((n, i) => n + (i.qty || 1), 0);
@@ -163,6 +163,132 @@ function orderRow(o) {
 
 /* ---------- views --------------------------------------------------- */
 let cache = { orders: null, inventory: null };
+
+/* ---------- Home / command dashboard -------------------------------- */
+async function viewHome() {
+  const root = $('#app');
+  const now = new Date();
+  const hour = now.getHours();
+  const greet = hour < 5 ? 'Late night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+  root.innerHTML = topbar('Command', dateStr) + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  let orders, inv;
+  try { orders = cache.orders = await api.orders(); inv = cache.inventory = await api.inventory(); }
+  catch (e) { return renderError(e, 'home'); }
+
+  const startDay = new Date(); startDay.setHours(0, 0, 0, 0);
+  const todays = orders.filter((o) => Date.parse(o.created_at) >= startDay.getTime());
+  const revToday = todays.filter((o) => o.status === 'paid' || o.status === 'fulfilled').reduce((s, o) => s + (o.total_cents || 0), 0);
+  const toShip = orders.filter((o) => o.status === 'paid').length;
+  const pending = orders.filter((o) => o.status === 'pending').length;
+  const low = inv.filter((i) => (i.on_hand || 0) > 0 && (i.on_hand || 0) <= 10).length;
+  const out = inv.filter((i) => (i.on_hand || 0) === 0).length;
+
+  let html = topbar('Command', dateStr, { right: `<button class="icon-btn" data-action="refresh" aria-label="Refresh">⟳</button>` });
+  html += `<div class="view">`;
+  html += `<div class="greeting">${greet}. Here's your business right now.</div>`;
+
+  html += `<div class="stats">
+    <div class="stat green"><div class="n" style="font-size:22px">${money(revToday)}</div><div class="l">Revenue today</div></div>
+    <div class="stat"><div class="n">${todays.length}</div><div class="l">Orders today</div></div>
+  </div>`;
+
+  // needs attention — only what requires action
+  const cards = [];
+  if (toShip) cards.push(`<button class="att" data-action="nav" data-to="ship"><span class="att-n">${toShip}</span><span class="att-l">order${toShip === 1 ? '' : 's'} ready to ship</span><span class="att-go">›</span></button>`);
+  if (pending) cards.push(`<button class="att" data-action="nav" data-to="orders"><span class="att-n">${pending}</span><span class="att-l">payment${pending === 1 ? '' : 's'} pending</span><span class="att-go">›</span></button>`);
+  if (out) cards.push(`<button class="att warn" data-action="nav" data-to="inventory"><span class="att-n">${out}</span><span class="att-l">SKU${out === 1 ? '' : 's'} out of stock</span><span class="att-go">›</span></button>`);
+  if (low) cards.push(`<button class="att" data-action="nav" data-to="inventory"><span class="att-n">${low}</span><span class="att-l">SKU${low === 1 ? '' : 's'} low on stock</span><span class="att-go">›</span></button>`);
+  html += `<div class="section-title">Needs attention</div>`;
+  html += cards.length ? `<div class="atts">${cards.join('')}</div>` : `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">✅</div><h3>All caught up</h3><p>Nothing needs action right now.</p></div></div>`;
+
+  // quick launcher
+  html += `<div class="section-title">Manage</div><div class="link-grid">
+    <button class="linkbtn" data-action="nav" data-to="orders"><span class="ico">▤</span> Orders</button>
+    <button class="linkbtn" data-action="nav" data-to="analytics"><span class="ico">◔</span> Analytics</button>
+    <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
+    <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
+  </div>`;
+
+  // recent orders
+  const recent = orders.slice().sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 5);
+  if (recent.length) {
+    html += `<div class="section-title">Recent orders <button data-action="nav" data-to="orders">All</button></div>`;
+    html += `<div class="card" style="padding:6px 16px">${recent.map(orderRow).join('')}</div>`;
+  }
+  html += `</div>` + bottomNav('home');
+  root.innerHTML = html;
+}
+
+/* ---------- Customers ---------------------------------------------- */
+function aggregateCustomers(orders) {
+  const map = {};
+  orders.forEach((o) => {
+    const key = (o.email || 'unknown').toLowerCase();
+    const c = map[key] || (map[key] = { email: o.email || '—', name: o.ship_name || '', orders: 0, spent: 0, brands: new Set(), last: 0, list: [] });
+    c.orders++;
+    if (o.status === 'paid' || o.status === 'fulfilled') c.spent += o.total_cents || 0;
+    c.brands.add(o.store_slug);
+    if (o.ship_name && !c.name) c.name = o.ship_name;
+    const t = Date.parse(o.created_at);
+    if (t > c.last) c.last = t;
+    c.list.push(o);
+  });
+  return Object.values(map).sort((a, b) => b.spent - a.spent);
+}
+
+async function viewCustomers() {
+  const root = $('#app');
+  root.innerHTML = topbar('Customers', 'Across all brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  let orders;
+  try { orders = cache.orders = await api.orders(); } catch (e) { return renderError(e, 'customers'); }
+  const all = aggregateCustomers(orders);
+  const repeat = all.filter((c) => c.orders > 1).length;
+  const q = state.custSearch.trim().toLowerCase();
+  const list = all.filter((c) => !q || c.email.toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q));
+
+  let html = topbar('Customers', `${all.length} total`, { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  html += `<div class="stats"><div class="stat"><div class="n">${all.length}</div><div class="l">Customers</div></div><div class="stat accent"><div class="n">${all.length ? Math.round((repeat / all.length) * 100) : 0}%</div><div class="l">Repeat buyers</div></div></div>`;
+  html += `<input class="input" id="cust-search" placeholder="Search name or email…" value="${esc(state.custSearch)}" style="margin:12px 0" autocomplete="off" />`;
+  if (!list.length) {
+    html += `<div class="card"><div class="empty"><div class="big">☺</div><h3>${all.length ? 'No matches' : 'No customers yet'}</h3><p>${all.length ? 'Try another search.' : 'They appear once orders come in.'}</p></div></div>`;
+  } else {
+    html += `<div class="card" style="padding:6px 16px">${list.map(custRow).join('')}</div>`;
+  }
+  html += `</div>` + bottomNav('home');
+  root.innerHTML = html;
+}
+function custRow(c) {
+  const brands = [...c.brands].map((slug) => `<span class="b-pip" style="background:${esc(state.storesById[slug]?.label_profile?.accent || '#5b6cff')}" title="${esc(state.storesById[slug]?.name || slug)}"></span>`).join('');
+  return `<div class="order" data-action="open-customer" data-email="${esc(c.email)}">
+    <div class="oi"><div class="oid" style="font-size:15px">${esc(c.name || c.email)}</div>
+      <div class="om">${brands} <span>${c.orders} order${c.orders === 1 ? '' : 's'} · last ${timeAgo(c.last)}</span></div></div>
+    <div class="amt">${money(c.spent)}<small>lifetime</small></div>
+  </div>`;
+}
+
+async function viewCustomer(email) {
+  const root = $('#app');
+  root.innerHTML = `<div class="topbar"><button class="back-btn" data-action="back">‹</button><div style="flex:1"><h1 style="font-size:19px">Customer</h1></div></div><div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  let orders;
+  try { orders = cache.orders = await api.orders(); } catch (e) { return renderError(e, 'customers'); }
+  const key = decodeURIComponent(email || '').toLowerCase();
+  const mine = orders.filter((o) => (o.email || '').toLowerCase() === key).sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  if (!mine.length) { go('customers'); return; }
+  const c = aggregateCustomers(mine)[0];
+
+  let html = `<div class="topbar"><button class="back-btn" data-action="back">‹</button><div style="flex:1;min-width:0"><h1 style="font-size:19px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c.name || c.email)}</h1><div class="sub">${esc(c.email)}</div></div></div>`;
+  html += `<div class="view">`;
+  html += `<div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat"><div class="n" style="font-size:20px">${money(c.spent)}</div><div class="l">Lifetime</div></div>
+    <div class="stat"><div class="n" style="font-size:20px">${c.orders}</div><div class="l">Orders</div></div>
+    <div class="stat"><div class="n" style="font-size:20px">${money(c.orders ? Math.round(c.spent / c.orders) : 0)}</div><div class="l">Avg</div></div>
+  </div>`;
+  html += `<div class="section-title">Order history</div><div class="card" style="padding:6px 16px">${mine.map(orderRow).join('')}</div>`;
+  html += `</div>` + bottomNav('home');
+  root.innerHTML = html;
+}
 
 async function viewOrders() {
   const root = $('#app');
@@ -519,11 +645,14 @@ async function render() {
   }
   const { seg, arg } = route();
   if (seg === 'order') return viewOrder(arg);
+  if (seg === 'orders') return viewOrders();
   if (seg === 'ship') return viewShip();
   if (seg === 'analytics') return viewAnalytics();
+  if (seg === 'customers') return viewCustomers();
+  if (seg === 'customer') return viewCustomer(arg);
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
-  return viewOrders();
+  return viewHome();
 }
 
 /* ---------- events -------------------------------------------------- */
@@ -534,6 +663,7 @@ document.addEventListener('click', async (e) => {
     case 'nav': go(to); break;
     case 'back': history.length > 1 ? history.back() : go('orders'); break;
     case 'open-order': go('order/' + id); break;
+    case 'open-customer': go('customer/' + encodeURIComponent(el.dataset.email)); break;
     case 'filter-brand': state.filterBrand = val; viewOrders(); break;
     case 'filter-status': state.filterStatus = val; viewOrders(); break;
     case 'refresh': cache.orders = cache.inventory = null; toast('Refreshed'); render(); break;
@@ -619,14 +749,25 @@ document.addEventListener('submit', async (e) => {
 
 /* live search (debounced re-render, keeps focus) */
 document.addEventListener('input', (e) => {
-  const s = e.target.closest('#order-search'); if (!s) return;
-  state.search = s.value;
-  clearTimeout(window.__searchT);
-  window.__searchT = setTimeout(async () => {
-    await viewOrders();
-    const inp = $('#order-search');
-    if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
-  }, 160);
+  const orderS = e.target.closest('#order-search');
+  const custS = e.target.closest('#cust-search');
+  if (orderS) {
+    state.search = orderS.value;
+    clearTimeout(window.__searchT);
+    window.__searchT = setTimeout(async () => {
+      await viewOrders();
+      const inp = $('#order-search');
+      if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
+    }, 160);
+  } else if (custS) {
+    state.custSearch = custS.value;
+    clearTimeout(window.__searchT);
+    window.__searchT = setTimeout(async () => {
+      await viewCustomers();
+      const inp = $('#cust-search');
+      if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
+    }, 160);
+  }
 });
 
 /* ---------- CSV export --------------------------------------------- */

@@ -236,6 +236,7 @@ async function viewHome() {
   html += `<div class="section-title">Manage</div><div class="link-grid">
     <button class="linkbtn" data-action="nav" data-to="orders"><span class="ico">▤</span> Orders</button>
     <button class="linkbtn" data-action="nav" data-to="analytics"><span class="ico">◔</span> Analytics</button>
+    <button class="linkbtn" data-action="nav" data-to="payments"><span class="ico">₿</span> Payments</button>
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
@@ -506,6 +507,53 @@ function shipRow(o) {
       <button class="btn primary" type="submit">Ship</button>
     </div>
   </form>`;
+}
+
+/* ---------- Payments / cash ----------------------------------------- */
+async function viewPayments() {
+  const root = $('#app');
+  root.innerHTML = topbar('Payments', 'Crypto · NOWPayments') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  let orders;
+  try { orders = cache.orders = await api.orders(); } catch (e) { return renderError(e, 'payments'); }
+  const days = RANGES[state.range] || 30;
+  const since = Date.now() - days * 86400000;
+  const inRange = orders.filter((o) => Date.parse(o.created_at) >= since);
+  const received = inRange.filter((o) => o.status === 'paid' || o.status === 'fulfilled');
+  const total = received.reduce((s, o) => s + (o.total_cents || 0), 0);
+  const pendingSum = inRange.filter((o) => o.status === 'pending').reduce((s, o) => s + (o.total_cents || 0), 0);
+  const failed = inRange.filter((o) => o.status === 'failed' || o.status === 'expired').length;
+
+  const byCur = {}; received.forEach((o) => { const k = o.pay_currency || '—'; byCur[k] = (byCur[k] || 0) + (o.total_cents || 0); });
+  const byBrand = {}; received.forEach((o) => { byBrand[o.store_slug] = (byBrand[o.store_slug] || 0) + (o.total_cents || 0); });
+  const maxCur = Math.max(1, ...Object.values(byCur));
+
+  let html = topbar('Payments', 'Crypto · NOWPayments', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  html += `<div class="chips">${['7d', '30d', '90d'].map((r) => `<button class="chip ${state.range === r ? 'sel' : ''}" data-action="range-pay" data-val="${r}">${r === '7d' ? '7 days' : r === '30d' ? '30 days' : '90 days'}</button>`).join('')}</div>`;
+  html += `<div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat green"><div class="n" style="font-size:19px">${money(total)}</div><div class="l">Received</div></div>
+    <div class="stat amber"><div class="n" style="font-size:19px">${money(pendingSum)}</div><div class="l">Pending</div></div>
+    <div class="stat"><div class="n" style="font-size:19px">${failed}</div><div class="l">Failed</div></div>
+  </div>`;
+
+  html += `<div class="section-title">Received by currency</div><div class="card">`;
+  const curs = Object.entries(byCur).sort((a, b) => b[1] - a[1]);
+  html += curs.length ? curs.map(([cur, amt]) => `<div class="brow"><div class="brow-top"><span style="font-weight:650;font-size:14px">${esc(cur)}</span><span class="brow-rev">${money(amt)}</span></div><div class="sharebar"><i style="width:${Math.round((amt / maxCur) * 100)}%;background:var(--teal)"></i></div></div>`).join('') : `<div class="hint" style="text-align:center;padding:12px 0">No payments in this range.</div>`;
+  html += `</div>`;
+
+  html += `<div class="section-title">Received by brand</div><div class="card">`;
+  const brs = Object.entries(byBrand).sort((a, b) => b[1] - a[1]);
+  html += brs.length ? brs.map(([slug, amt]) => `<div class="kv"><span class="k">${brandBadge(slug)}</span><span class="v">${money(amt)}</span></div>`).join('') : `<div class="hint">—</div>`;
+  html += `</div>`;
+
+  html += `<div class="section-title">Transactions</div><div class="card" style="padding:6px 16px">`;
+  const txns = received.slice().sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 30);
+  html += txns.length ? txns.map((o) => `<div class="order" data-action="open-order" data-id="${esc(o.id)}">
+    <div class="oi"><div class="oid">${esc(o.id)}</div><div class="om">${brandBadge(o.store_slug)} <span>${esc(o.pay_currency || '—')} · ${timeAgo(o.created_at)}</span></div></div>
+    <div class="amt">${money(o.total_cents)}</div></div>`).join('') : `<div class="hint" style="padding:10px 0">No transactions.</div>`;
+  html += `</div>`;
+  html += `</div>` + bottomNav('home');
+  root.innerHTML = html;
 }
 
 const RANGES = { '7d': 7, '30d': 30, '90d': 90 };
@@ -858,6 +906,7 @@ async function render() {
   if (seg === 'customer') return viewCustomer(arg);
   if (seg === 'restock') return viewRestock();
   if (seg === 'lab') return viewLab();
+  if (seg === 'payments') return viewPayments();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -889,6 +938,7 @@ document.addEventListener('click', async (e) => {
     case 'signout': signOut(); break;
     case 'export': exportCsv(); break;
     case 'range': state.range = val; viewAnalytics(); break;
+    case 'range-pay': state.range = val; viewPayments(); break;
     case 'an-table': state.anTable = !state.anTable; viewAnalytics(); break;
     case 'tbar': {
       const b = analyticsDays[Number(el.dataset.i)];

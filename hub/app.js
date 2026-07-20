@@ -31,7 +31,8 @@ const STATUSES = ['pending', 'paid', 'fulfilled', 'failed', 'expired'];
 const STATUS_LABEL = { pending: 'Pending', paid: 'Paid', fulfilled: 'Fulfilled', failed: 'Failed', expired: 'Expired' };
 
 /* ---------- state --------------------------------------------------- */
-const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all', search: '' };
+const state = { session: null, storesById: {}, filterBrand: 'all', filterStatus: 'all', search: '', range: '30d', anTable: false };
+let analyticsDays = []; // stash for the time-chart tap readout
 
 /* ---------- backend: demo fixtures ---------------------------------- */
 const demo = (() => {
@@ -51,10 +52,10 @@ const demo = (() => {
   const orders = [
     mk('AM-1A2B3C4D', 'aminos', 'paid', 22, 'jordan@example.com', [{ sku: 'BPC157', name: 'BPC-157 (5mg)', size: '5mg', qty: 2, unit_cents: 6500 }], 14900),
     mk('WL-9Z8Y7X6W', 'getwll', 'paid', 48, 'sam@example.com', [{ sku: 'TB500', name: 'WLL TB-500 5mg', size: '5mg', qty: 1, unit_cents: 7900 }], 8800, { name: 'Sam Rivera' }),
-    mk('AM-5E6F7G8H', 'aminos', 'fulfilled', 210, 'alex@example.com', [{ sku: 'GHKCU', name: 'GHK-Cu (50mg)', size: '50mg', qty: 1, unit_cents: 5500 }], 6400, { tracking: '9400111899223', label: '#', name: 'Alex Kim' }),
+    mk('AM-5E6F7G8H', 'aminos', 'fulfilled', 3 * 1440, 'alex@example.com', [{ sku: 'GHKCU', name: 'GHK-Cu (50mg)', size: '50mg', qty: 1, unit_cents: 5500 }], 6400, { tracking: '9400111899223', label: '#', name: 'Alex Kim' }),
     mk('WL-2Q3R4S5T', 'getwll', 'pending', 6, 'chris@example.com', [{ sku: 'BPC157', name: 'WLL BPC-157 5mg', size: '5mg', qty: 1, unit_cents: 6900 }], 7800, { name: 'Chris Park' }),
-    mk('AM-8K9L0M1N', 'aminos', 'fulfilled', 1500, 'taylor@example.com', [{ sku: 'MOTSC', name: 'MOTS-c (10mg)', size: '10mg', qty: 3, unit_cents: 8000 }], 24900, { tracking: '9400111899999', label: '#', name: 'Taylor Fox' }),
-    mk('WL-3U4V5W6X', 'getwll', 'paid', 95, 'morgan@example.com', [{ sku: 'GLOW', name: 'WLL GLOW Blend', size: 'kit', qty: 1, unit_cents: 12000 }], 12900, { name: 'Morgan Bell' }),
+    mk('AM-8K9L0M1N', 'aminos', 'fulfilled', 6 * 1440, 'taylor@example.com', [{ sku: 'MOTSC', name: 'MOTS-c (10mg)', size: '10mg', qty: 3, unit_cents: 8000 }], 24900, { tracking: '9400111899999', label: '#', name: 'Taylor Fox' }),
+    mk('WL-3U4V5W6X', 'getwll', 'paid', 4 * 1440, 'morgan@example.com', [{ sku: 'GLOW', name: 'WLL GLOW Blend', size: 'kit', qty: 1, unit_cents: 12000 }], 12900, { name: 'Morgan Bell' }),
   ];
   const inventory = [
     { sku: 'BPC157', on_hand: 120, products: { name: 'BPC-157', peptide: 'BPC-157' } },
@@ -187,13 +188,13 @@ async function viewOrders() {
       (o.ship_name || '').toLowerCase().includes(q) || (o.tracking_number || '').toLowerCase().includes(q)));
 
   let html = topbar('Orders', LIVE ? 'Live · all brands' : 'Demo data · all brands', {
-    right: `<button class="icon-btn" data-action="export" aria-label="Export CSV" title="Export CSV">⤓</button><button class="icon-btn" data-action="refresh" aria-label="Refresh" style="margin-left:8px">⟳</button>`,
+    right: `<button class="icon-btn" data-action="nav" data-to="analytics" aria-label="Analytics" title="Analytics">◔</button><button class="icon-btn" data-action="export" aria-label="Export CSV" title="Export CSV" style="margin-left:8px">⤓</button><button class="icon-btn" data-action="refresh" aria-label="Refresh" style="margin-left:8px">⟳</button>`,
   });
   html += `<div class="view">`;
   if (!LIVE) html += `<div class="banner">Showing <b>demo data</b>. Add your Supabase URL + anon key in <b>config.js</b> to go live.</div>`;
   html += `<div class="stats">
     <div class="stat"><div class="n">${todays.length}</div><div class="l">Orders today</div></div>
-    <div class="stat green"><div class="n">${money(revenue)}</div><div class="l">Paid revenue</div></div>
+    <div class="stat green" data-action="nav" data-to="analytics" style="cursor:pointer"><div class="n">${money(revenue)}</div><div class="l">Paid revenue ›</div></div>
     <div class="stat amber" data-action="nav" data-to="ship" style="cursor:pointer"><div class="n">${toShip}</div><div class="l">Ready to ship ›</div></div>
     <div class="stat ${lowStock ? 'amber' : ''}"><div class="n">${lowStock}</div><div class="l">Low stock SKUs</div></div>
   </div>`;
@@ -343,6 +344,115 @@ function shipRow(o) {
   </form>`;
 }
 
+const RANGES = { '7d': 7, '30d': 30, '90d': 90 };
+async function viewAnalytics() {
+  const root = $('#app');
+  root.innerHTML = topbar('Analytics', 'Per-brand performance') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('orders');
+  let orders;
+  try { orders = cache.orders = await api.orders(); } catch (e) { return renderError(e, 'analytics'); }
+
+  const days = RANGES[state.range] || 30;
+  const since = Date.now() - days * 86400000;
+  const inRange = orders.filter((o) => Date.parse(o.created_at) >= since);
+  const paid = inRange.filter((o) => o.status === 'paid' || o.status === 'fulfilled');
+  const rev = (o) => o.total_cents || 0;
+
+  const totalRev = paid.reduce((s, o) => s + rev(o), 0);
+  const totalOrders = paid.length;
+  const aov = totalOrders ? Math.round(totalRev / totalOrders) : 0;
+
+  // per-brand aggregates
+  const brands = state.stores.map((s) => {
+    const os = paid.filter((o) => o.store_slug === s.slug);
+    const r = os.reduce((a, o) => a + rev(o), 0);
+    return { slug: s.slug, name: s.name, accent: s.label_profile?.accent || '#5b6cff', revenue: r, orders: os.length, aov: os.length ? Math.round(r / os.length) : 0 };
+  }).sort((a, b) => b.revenue - a.revenue);
+  const maxBrandRev = Math.max(1, ...brands.map((b) => b.revenue));
+
+  // daily buckets (oldest→newest) stacked by brand
+  const buckets = [];
+  const startDay = new Date(); startDay.setHours(0, 0, 0, 0);
+  for (let i = days - 1; i >= 0; i--) {
+    const d0 = startDay.getTime() - i * 86400000;
+    const d1 = d0 + 86400000;
+    const dayOrders = paid.filter((o) => { const t = Date.parse(o.created_at); return t >= d0 && t < d1; });
+    const per = {};
+    state.stores.forEach((s) => { per[s.slug] = dayOrders.filter((o) => o.store_slug === s.slug).reduce((a, o) => a + rev(o), 0); });
+    buckets.push({ date: d0, total: dayOrders.reduce((a, o) => a + rev(o), 0), per });
+  }
+  analyticsDays = buckets;
+  const maxDay = Math.max(1, ...buckets.map((b) => b.total));
+
+  let html = topbar('Analytics', LIVE ? 'Per-brand · live' : 'Per-brand · demo', {
+    left: `<button class="back-btn" data-action="back">‹</button>`,
+  });
+  html += `<div class="view">`;
+  html += `<div class="chips">${['7d', '30d', '90d'].map((r) => `<button class="chip ${state.range === r ? 'sel' : ''}" data-action="range" data-val="${r}">${r === '7d' ? '7 days' : r === '30d' ? '30 days' : '90 days'}</button>`).join('')}</div>`;
+
+  html += `<div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat green"><div class="n" style="font-size:20px">${money(totalRev)}</div><div class="l">Revenue</div></div>
+    <div class="stat"><div class="n" style="font-size:20px">${totalOrders}</div><div class="l">Orders</div></div>
+    <div class="stat"><div class="n" style="font-size:20px">${money(aov)}</div><div class="l">Avg order</div></div>
+  </div>`;
+
+  // revenue by brand — horizontal bars, direct-labeled (relief for contrast WARN)
+  html += `<div class="section-title">Revenue by brand</div><div class="card">`;
+  if (!totalRev) {
+    html += `<div class="hint" style="text-align:center;padding:12px 0">No paid revenue in this range.</div>`;
+  } else {
+    html += brands.map((b) => {
+      const pct = Math.round((b.revenue / totalRev) * 100);
+      const w = Math.round((b.revenue / maxBrandRev) * 100);
+      return `<div class="brow">
+        <div class="brow-top"><span class="brand" style="background:${esc(b.accent)}"><span class="b-dot"></span>${esc(b.name)}</span><span class="brow-rev">${money(b.revenue)}</span></div>
+        <div class="sharebar"><i style="width:${w}%;background:${esc(b.accent)}"></i></div>
+        <div class="brow-sub">${b.orders} order${b.orders === 1 ? '' : 's'} · AOV ${money(b.aov)} · ${pct}% of revenue</div>
+      </div>`;
+    }).join('');
+  }
+  html += `</div>`;
+
+  // revenue over time — stacked daily bars + legend + table toggle
+  html += `<div class="section-title">Revenue over time <button data-action="an-table">${state.anTable ? 'Chart' : 'Table'}</button></div>`;
+  html += `<div class="card">`;
+  html += `<div class="legend">${state.stores.map((s) => `<span class="lg"><span class="lg-dot" style="background:${esc(s.label_profile?.accent || '#5b6cff')}"></span>${esc(s.name)}</span>`).join('')}</div>`;
+  if (state.anTable) {
+    html += `<div style="overflow-x:auto"><table class="antable"><thead><tr><th>Day</th>${state.stores.map((s) => `<th>${esc(s.name)}</th>`).join('')}<th>Total</th></tr></thead><tbody>`;
+    html += buckets.filter((b) => b.total > 0).reverse().map((b) => `<tr><td>${fmtDay(b.date)}</td>${state.stores.map((s) => `<td>${b.per[s.slug] ? money(b.per[s.slug]) : '—'}</td>`).join('')}<td>${money(b.total)}</td></tr>`).join('') || `<tr><td colspan="${state.stores.length + 2}" style="color:var(--faint)">No revenue in range.</td></tr>`;
+    html += `</tbody></table></div>`;
+  } else {
+    const CH = 130;
+    html += `<div class="tchart" style="height:${CH}px">`;
+    html += buckets.map((b, i) => {
+      const colH = b.total ? Math.max(3, Math.round((b.total / maxDay) * CH)) : 0;
+      const segs = state.stores.filter((s) => b.per[s.slug] > 0).map((s) => {
+        const h = Math.max(2, Math.round((b.per[s.slug] / b.total) * colH));
+        return `<i style="height:${h}px;background:${esc(s.label_profile?.accent || '#5b6cff')}"></i>`;
+      }).join('');
+      return `<button class="tcol" data-action="tbar" data-i="${i}" aria-label="${fmtDay(b.date)} ${money(b.total)}"><span class="tstack">${segs}</span></button>`;
+    }).join('');
+    html += `</div>`;
+    html += `<div class="taxis"><span>${fmtDay(buckets[0].date)}</span><span>${fmtDay(buckets[buckets.length - 1].date)}</span></div>`;
+    html += `<div class="treadout" id="treadout">Tap a bar for the daily breakdown.</div>`;
+  }
+  html += `</div>`;
+
+  // top products by units
+  const skuMap = {};
+  paid.forEach((o) => (o.items || []).forEach((it) => { const k = it.sku || it.name; skuMap[k] = (skuMap[k] || 0) + (it.qty || 1); }));
+  const top = Object.entries(skuMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  if (top.length) {
+    html += `<div class="section-title">Top products · units</div><div class="card">`;
+    const maxU = Math.max(...top.map((t) => t[1]));
+    html += top.map(([sku, u]) => `<div class="brow" style="margin-bottom:10px"><div class="brow-top"><span style="font-weight:600;font-size:14px">${esc(sku)}</span><span class="brow-rev">${u}</span></div><div class="sharebar"><i style="width:${Math.round((u / maxU) * 100)}%;background:var(--teal)"></i></div></div>`).join('');
+    html += `</div>`;
+  }
+
+  html += `</div>` + bottomNav('orders');
+  root.innerHTML = html;
+}
+function fmtDay(ts) { const d = new Date(ts); return (d.getMonth() + 1) + '/' + d.getDate(); }
+
 async function viewInventory() {
   const root = $('#app');
   root.innerHTML = topbar('Inventory', 'Shared across brands') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
@@ -410,6 +520,7 @@ async function render() {
   const { seg, arg } = route();
   if (seg === 'order') return viewOrder(arg);
   if (seg === 'ship') return viewShip();
+  if (seg === 'analytics') return viewAnalytics();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewOrders();
@@ -428,6 +539,20 @@ document.addEventListener('click', async (e) => {
     case 'refresh': cache.orders = cache.inventory = null; toast('Refreshed'); render(); break;
     case 'signout': signOut(); break;
     case 'export': exportCsv(); break;
+    case 'range': state.range = val; viewAnalytics(); break;
+    case 'an-table': state.anTable = !state.anTable; viewAnalytics(); break;
+    case 'tbar': {
+      const b = analyticsDays[Number(el.dataset.i)];
+      const ro = $('#treadout');
+      if (b && ro) {
+        if (!b.total) { ro.textContent = fmtDay(b.date) + ' — no revenue'; }
+        else {
+          const parts = state.stores.filter((s) => b.per[s.slug] > 0).map((s) => esc(s.name) + ' ' + money(b.per[s.slug]));
+          ro.innerHTML = `<b>${fmtDay(b.date)}</b> · ${money(b.total)} — ${parts.join(' · ')}`;
+        }
+      }
+      break;
+    }
     case 'mark':
       try { await api.updateOrder(id, { status }); toast('Marked ' + status); cache.orders = null; viewOrder(id); }
       catch (err) { toast(err.status === 401 ? 'Session expired' : 'Update failed'); }

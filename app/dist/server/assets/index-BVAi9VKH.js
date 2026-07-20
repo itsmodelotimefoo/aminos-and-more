@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-BwwNE6Rr.js";
-import { a as Route, L as Link } from "./router-CDSweWN3.js";
-import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-1M4XhM36.js";
+import { V as jsxRuntimeExports } from "./server-DFGxQB4F.js";
+import { a as Route, L as Link } from "./router-cNU7FuqS.js";
+import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-NTvpQSz1.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,7 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./catalog.server-DqFAIc20.js";
+import "./catalog.server-GU_wiFoQ.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function Index() {

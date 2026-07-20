@@ -1,5 +1,5 @@
-import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet, a2 as TSS_SERVER_FUNCTION, a3 as getServerFnById, a4 as createServerFn } from "./server-BwwNE6Rr.js";
-import { g as getCatalog, a as getProduct } from "./catalog.server-DqFAIc20.js";
+import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet, a2 as TSS_SERVER_FUNCTION, a3 as getServerFnById, a4 as createServerFn } from "./server-DFGxQB4F.js";
+import { g as getCatalog, a as getProduct } from "./catalog.server-GU_wiFoQ.js";
 import { env } from "cloudflare:workers";
 import { g as getOrder, u as updatePayment, s as setFulfillment, o as object, a as array, l as literal, b as string, n as number, i as insertOrder, c as setInvoiceId } from "./orders.server-DVmQ-msp.js";
 var reactUse = reactExports.use;
@@ -5412,7 +5412,7 @@ function RootComponent() {
   }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter$7 = () => import("./testing-A73p0MjJ.js");
+const $$splitComponentImporter$7 = () => import("./testing-C9s5z_CA.js");
 const Route$c = createFileRoute("/testing")({
   head: () => ({
     meta: [{
@@ -5482,7 +5482,7 @@ const Route$a = createFileRoute("/robots.txt")({
     }
   }
 });
-const $$splitComponentImporter$6 = () => import("./join-CH_KBAdL.js");
+const $$splitComponentImporter$6 = () => import("./join-qIQVjTqa.js");
 const Route$9 = createFileRoute("/join")({
   head: () => ({
     meta: [{
@@ -5494,7 +5494,7 @@ const Route$9 = createFileRoute("/join")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./checkout-success-DFGrjd7t.js");
+const $$splitComponentImporter$5 = () => import("./checkout-success-D7_37P5y.js");
 const Route$8 = createFileRoute("/checkout-success")({
   validateSearch: (s) => ({
     order: typeof s.order === "string" ? s.order : void 0
@@ -5509,7 +5509,7 @@ const Route$8 = createFileRoute("/checkout-success")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$5, "component")
 });
-const $$splitComponentImporter$4 = () => import("./checkout-BhCrZzUc.js");
+const $$splitComponentImporter$4 = () => import("./checkout-BQXUKCcp.js");
 const Route$7 = createFileRoute("/checkout")({
   head: () => ({
     meta: [{
@@ -5536,7 +5536,7 @@ var createSsrRpc = (functionId) => {
 const loadCatalog = createServerFn({
   method: "GET"
 }).handler(createSsrRpc("686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8"));
-const $$splitComponentImporter$3 = () => import("./catalog-oTlcZIDH.js");
+const $$splitComponentImporter$3 = () => import("./catalog-CT2I-6RZ.js");
 const Route$6 = createFileRoute("/catalog")({
   loader: async () => ({
     products: await loadCatalog()
@@ -5551,7 +5551,7 @@ const Route$6 = createFileRoute("/catalog")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-const $$splitComponentImporter$2 = () => import("./about-C8aZaH8x.js");
+const $$splitComponentImporter$2 = () => import("./about-BJef5wGe.js");
 const Route$5 = createFileRoute("/about")({
   head: () => ({
     meta: [{
@@ -5563,14 +5563,14 @@ const Route$5 = createFileRoute("/about")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-const $$splitComponentImporter$1 = () => import("./index-AC-xCCPS.js");
+const $$splitComponentImporter$1 = () => import("./index-BVAi9VKH.js");
 const Route$4 = createFileRoute("/")({
   loader: async () => ({
     products: await loadCatalog()
   }),
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./products._slug-DWZ5opYf.js");
+const $$splitComponentImporter = () => import("./products._slug-CLSRLWD3.js");
 const Route$3 = createFileRoute("/products/$slug")({
   loader: async () => ({
     products: await loadCatalog()

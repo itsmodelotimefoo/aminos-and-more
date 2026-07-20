@@ -17075,11 +17075,11 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "3e225970265ca731cd1617a1ff3e08e3b988b9bd8e5797baff80e8296c6f3919": {
     functionName: "getOrderStatus_createServerFn_handler",
-    importer: () => import("./orders.functions-CjpGFoCq.js")
+    importer: () => import("./orders.functions-DamdG2Cu.js")
   },
   "686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8": {
     functionName: "loadCatalog_createServerFn_handler",
-    importer: () => import("./catalog.functions-CakR5ZzG.js")
+    importer: () => import("./catalog.functions-C5Sakem1.js")
   }
 };
 async function getServerFnById(id, access) {
@@ -18320,8 +18320,8 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-CDSweWN3.js").then((n2) => n2.r),
-    import("./start-DFW9kF_d.js"),
+    import("./router-cNU7FuqS.js").then((n2) => n2.r),
+    import("./start-B8fhuV8x.js"),
     import("./empty-plugin-adapters-BFgPZ6_d.js")
   ]);
   return {

@@ -52,22 +52,32 @@ function toProduct(r: Row): Product {
   };
 }
 
+// Small per-isolate cache so we don't hit Supabase on every page render. Hub
+// edits appear within CATALOG_TTL_MS (default 60s). On a fetch error we serve
+// the last good catalog rather than snapping back to static (no price flicker).
+let _cache: { at: number; data: Product[] } | null = null;
+
 export async function getCatalog(): Promise<Product[]> {
   const c = cfg();
-  if (!c) return PRODUCTS;
+  if (!c) return PRODUCTS; // flag off → static is instant, no cache needed
+  const ttl = Number((env as Record<string, string | undefined>).CATALOG_TTL_MS) || 60_000;
+  const now = Date.now();
+  if (_cache && now - _cache.at < ttl) return _cache.data;
   try {
     const res = await fetch(
       `${c.url}/rest/v1/products?select=*&active=eq.true&order=sort.asc`,
       { headers: { apikey: c.key, Authorization: `Bearer ${c.key}` } },
     );
-    if (!res.ok) return PRODUCTS;
+    if (!res.ok) return _cache?.data ?? PRODUCTS;
     const rows = (await res.json()) as Row[];
     const mapped = Array.isArray(rows)
       ? rows.filter((r) => r.slug && Array.isArray(r.sizes) && r.sizes.length).map(toProduct)
       : [];
-    return mapped.length ? mapped : PRODUCTS; // empty/garbage → fall back
+    const data = mapped.length ? mapped : PRODUCTS; // empty/garbage → fall back
+    _cache = { at: now, data };
+    return data;
   } catch {
-    return PRODUCTS;
+    return _cache?.data ?? PRODUCTS; // serve stale on transient error
   }
 }
 

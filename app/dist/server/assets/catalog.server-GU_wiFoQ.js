@@ -190,20 +190,26 @@ function toProduct(r) {
     mw: r.mw || ""
   };
 }
+let _cache = null;
 async function getCatalog() {
   const c = cfg();
   if (!c) return PRODUCTS;
+  const ttl = Number(env.CATALOG_TTL_MS) || 6e4;
+  const now = Date.now();
+  if (_cache && now - _cache.at < ttl) return _cache.data;
   try {
     const res = await fetch(
       `${c.url}/rest/v1/products?select=*&active=eq.true&order=sort.asc`,
       { headers: { apikey: c.key, Authorization: `Bearer ${c.key}` } }
     );
-    if (!res.ok) return PRODUCTS;
+    if (!res.ok) return _cache?.data ?? PRODUCTS;
     const rows = await res.json();
     const mapped = Array.isArray(rows) ? rows.filter((r) => r.slug && Array.isArray(r.sizes) && r.sizes.length).map(toProduct) : [];
-    return mapped.length ? mapped : PRODUCTS;
+    const data = mapped.length ? mapped : PRODUCTS;
+    _cache = { at: now, data };
+    return data;
   } catch {
-    return PRODUCTS;
+    return _cache?.data ?? PRODUCTS;
   }
 }
 export {

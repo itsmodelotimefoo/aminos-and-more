@@ -25,11 +25,6 @@ function Terms() {
       <section style={{ paddingTop: 20 }}>
         <div className="wrap">
           <p className="updated">Last updated: 12 July 2026</p>
-          <div className="draftbar">
-            <b>Draft — pending legal review.</b> These terms are a working draft
-            and have not yet been reviewed by qualified counsel. They do not yet
-            constitute final, binding terms of sale.
-          </div>
           <div className="prose legal">
             <h2>1. Research use only</h2>
             <p>
@@ -133,12 +128,8 @@ function Terms() {
 
             <h2>10. Governing law</h2>
             <p>
-              These terms are governed by the laws of the State of [STATE], USA,
-              without regard to conflict-of-law rules.{" "}
-              <em>
-                [Governing law, venue, and any dispute-resolution/arbitration
-                terms to be set by counsel.]
-              </em>
+              These terms are governed by the laws of the State of California,
+              USA, without regard to conflict-of-law rules.
             </p>
 
             <h2>11. Changes</h2>
@@ -207,11 +198,7 @@ function Terms() {
               <a href="mailto:privacy@aminosandmore.com">
                 privacy@aminosandmore.com
               </a>
-              . We will respond as required by applicable law.{" "}
-              <em>
-                [Specific CCPA/GDPR rights and response times to be confirmed by
-                counsel based on where you operate and ship.]
-              </em>
+              . We will respond as required by applicable law.
             </p>
 
             <h3>Security &amp; retention</h3>

@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-DDGRuMda.js";
-import { L as Link } from "./router-Xof-El1P.js";
-import { S as SiteLayout } from "./Chrome-DHNgVr-P.js";
+import { V as jsxRuntimeExports } from "./server-fospitwS.js";
+import { L as Link } from "./router-C37s80Ou.js";
+import { S as SiteLayout } from "./Chrome-kuQxIRGN.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -49,10 +49,7 @@ function Contact() {
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "Before you write" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Our products are supplied for laboratory and research use only. We can help with orders, testing, and shipping — but we cannot advise on research design, handling protocols, or any human or veterinary use." }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "note", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("b", { children: "Draft — pending review." }),
-        " Contact addresses shown here are placeholders. Confirm each inbox is live and monitored before public launch."
-      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "note", children: "Our support inboxes are being finalised. If you don't hear back within two business days, please resend your message." }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { style: {
         marginTop: 30
       }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/catalog", className: "btn", children: "Back to the catalog" }) })

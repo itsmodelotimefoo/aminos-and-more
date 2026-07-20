@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-DDGRuMda.js";
-import { L as Link } from "./router-Xof-El1P.js";
-import { S as SiteLayout } from "./Chrome-DHNgVr-P.js";
+import { V as jsxRuntimeExports } from "./server-fospitwS.js";
+import { L as Link } from "./router-C37s80Ou.js";
+import { S as SiteLayout } from "./Chrome-kuQxIRGN.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -20,10 +20,6 @@ function Terms() {
       paddingTop: 20
     }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "updated", children: "Last updated: 12 July 2026" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "draftbar", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("b", { children: "Draft — pending legal review." }),
-        " These terms are a working draft and have not yet been reviewed by qualified counsel. They do not yet constitute final, binding terms of sale."
-      ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "prose legal", children: [
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "1. Research use only" }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { children: [
@@ -69,11 +65,7 @@ function Terms() {
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "9. Indemnification" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "You agree to indemnify and hold harmless the Company and its officers, employees, and suppliers from any claim, loss, or liability arising from your purchase, handling, or use of the materials, or your breach of these terms." }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "10. Governing law" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { children: [
-          "These terms are governed by the laws of the State of [STATE], USA, without regard to conflict-of-law rules.",
-          " ",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("em", { children: "[Governing law, venue, and any dispute-resolution/arbitration terms to be set by counsel.]" })
-        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "These terms are governed by the laws of the State of California, USA, without regard to conflict-of-law rules." }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "11. Changes" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "We may update these terms at any time. The version in effect at the time of your order governs that order." }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { style: {
@@ -114,9 +106,7 @@ function Terms() {
           "You may request access to, correction of, or deletion of your personal information by contacting us at",
           " ",
           /* @__PURE__ */ jsxRuntimeExports.jsx("a", { href: "mailto:privacy@aminosandmore.com", children: "privacy@aminosandmore.com" }),
-          ". We will respond as required by applicable law.",
-          " ",
-          /* @__PURE__ */ jsxRuntimeExports.jsx("em", { children: "[Specific CCPA/GDPR rights and response times to be confirmed by counsel based on where you operate and ship.]" })
+          ". We will respond as required by applicable law."
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { children: "Security & retention" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "We take reasonable measures to protect the data we hold and retain order records as needed for business and legal purposes. No method of transmission or storage is completely secure." }),

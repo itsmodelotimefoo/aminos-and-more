@@ -68,9 +68,8 @@ function Contact() {
           </p>
 
           <div className="note">
-            <b>Draft — pending review.</b> Contact addresses shown here are
-            placeholders. Confirm each inbox is live and monitored before public
-            launch.
+            Our support inboxes are being finalised. If you don't hear back
+            within two business days, please resend your message.
           </div>
 
           <p style={{ marginTop: 30 }}>

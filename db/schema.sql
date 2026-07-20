@@ -31,7 +31,24 @@ create table if not exists products (
   created_at timestamptz not null default now()
 );
 
--- per-brand "skin" of a shared product (name/price/packaging differ per brand)
+-- Catalog fields on products so the Hub can drive the live storefront (headless):
+-- edit these on your phone and the store renders them. `sizes` is the variant
+-- price list [["5 mg", 3600], ...] in CENTS. `active=false` hides / sells-out.
+alter table products add column if not exists slug    text;
+alter table products add column if not exists cls     text;    -- class / identity line
+alter table products add column if not exists kind    text;    -- peptide | duo | blend
+alter table products add column if not exists accent  text;
+alter table products add column if not exists img     text;
+alter table products add column if not exists blurb   text;
+alter table products add column if not exists cas     text;
+alter table products add column if not exists formula text;
+alter table products add column if not exists mw      text;
+alter table products add column if not exists sizes   jsonb not null default '[]'::jsonb;
+alter table products add column if not exists active  boolean not null default true;
+alter table products add column if not exists sort    integer not null default 0;
+create unique index if not exists products_slug_idx on products (slug);
+
+-- per-brand "skin" of a shared product (name/price/availability differ per brand)
 create table if not exists store_products (
   store_slug   text not null references stores(slug) on delete cascade,
   sku          text not null references products(sku) on delete cascade,
@@ -40,6 +57,8 @@ create table if not exists store_products (
   packaging    text,                              -- brand-specific packaging note
   primary key (store_slug, sku)
 );
+alter table store_products add column if not exists sizes  jsonb not null default '[]'::jsonb; -- per-brand price override
+alter table store_products add column if not exists active boolean not null default true;      -- per-brand availability
 
 -- ---------- shared inventory (one stock pool across brands) ------------------
 create table if not exists inventory (

@@ -84,7 +84,20 @@ const demo = (() => {
     { id: 3, title: 'Restock WLL insert cards', done: false, priority: 'low', due: dstr(5), assignee: '', store_slug: 'getwll' },
     { id: 4, title: 'Confirm Shippo pickup Friday', done: true, priority: 'med', due: dstr(-1), assignee: 'You', store_slug: null },
   ];
-  return { stores, orders, inventory, lots, tasks };
+  const catalog = [
+    { sku: 'GHKCU', slug: 'ghk-cu', name: 'GHK-Cu', cls: 'Copper-Binding Tripeptide', kind: 'peptide', active: true, sizes: [['50 mg', 3000], ['100 mg', 4500]] },
+    { sku: 'BPC157', slug: 'bpc-157', name: 'BPC-157', cls: 'Pentadecapeptide', kind: 'peptide', active: true, sizes: [['5 mg', 3600], ['10 mg', 6600]] },
+    { sku: 'TB500', slug: 'tb-500', name: 'TB-500', cls: 'Actin-Binding Peptide', kind: 'peptide', active: true, sizes: [['2 mg', 4000], ['5 mg', 8000], ['10 mg', 15000]] },
+    { sku: 'MOTSC', slug: 'mots-c', name: 'MOTS-c', cls: 'Mitochondrial-Derived Peptide', kind: 'peptide', active: true, sizes: [['10 mg', 6500], ['20 mg', 12500], ['40 mg', 22000]] },
+    { sku: 'NAD', slug: 'nad', name: 'NAD+', cls: 'Coenzyme', kind: 'peptide', active: true, sizes: [['500 mg', 5000], ['1000 mg', 7500]] },
+    { sku: 'SS31', slug: 'ss-31', name: 'SS-31', cls: 'Mitochondrial-Targeted Peptide', kind: 'peptide', active: true, sizes: [['10 mg', 10000], ['50 mg', 31000]] },
+    { sku: '3A', slug: '3a', name: '3A', cls: 'Peptide', kind: 'peptide', active: false, sizes: [['5 mg', 7000], ['10 mg', 10500]] },
+    { sku: 'CJCIPA', slug: 'cjc-ipa', name: 'CJC-1295 + Ipamorelin', cls: 'GHRH + GHRP Duo', kind: 'duo', active: true, sizes: [['10 mg', 10500]] },
+    { sku: 'THESTACK', slug: 'the-stack', name: 'The Stack', cls: 'Duo', kind: 'duo', active: true, sizes: [['10 mg', 10000], ['20 mg', 20000]] },
+    { sku: 'GLOW', slug: 'glow', name: 'GLOW', cls: 'Blend', kind: 'blend', active: true, sizes: [['70 mg', 17000]] },
+    { sku: 'KLOW', slug: 'klow', name: 'KLOW', cls: 'Blend', kind: 'blend', active: true, sizes: [['80 mg', 18000]] },
+  ];
+  return { stores, orders, inventory, lots, tasks, catalog };
 })();
 
 /* ---------- backend: Supabase REST --------------------------------- */
@@ -129,6 +142,19 @@ const api = {
   async tasks() {
     if (!LIVE) return demo.tasks;
     return sb('/tasks?select=*&order=done.asc,due.asc.nullslast');
+  },
+  async catalog() {
+    if (!LIVE) return demo.catalog;
+    return sb('/products?select=*&order=sort.asc,name.asc');
+  },
+  async saveProduct(p) {
+    if (!LIVE) { const i = demo.catalog.findIndex((x) => x.sku === p.sku); if (i >= 0) demo.catalog[i] = { ...demo.catalog[i], ...p }; else demo.catalog.push(p); return p; }
+    const r = await sb('/products?on_conflict=sku', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(p) });
+    return r[0];
+  },
+  async deleteProduct(sku) {
+    if (!LIVE) { demo.catalog = demo.catalog.filter((x) => x.sku !== sku); return; }
+    await sb('/products?sku=eq.' + encodeURIComponent(sku), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
   },
   async addTask(t) {
     if (!LIVE) { demo.tasks.unshift({ id: Date.now(), done: false, ...t }); return t; }
@@ -218,7 +244,7 @@ function orderRow(o) {
 }
 
 /* ---------- views --------------------------------------------------- */
-let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined };
+let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined, catalog: undefined };
 
 /* ---------- Home / command dashboard -------------------------------- */
 async function viewHome() {
@@ -261,6 +287,7 @@ async function viewHome() {
   // quick launcher
   html += `<div class="section-title">Manage</div><div class="link-grid">
     <button class="linkbtn" data-action="nav" data-to="orders"><span class="ico">▤</span> Orders</button>
+    <button class="linkbtn" data-action="nav" data-to="catalog"><span class="ico">🛍️</span> Catalog</button>
     <button class="linkbtn" data-action="nav" data-to="analytics"><span class="ico">◔</span> Analytics</button>
     <button class="linkbtn" data-action="nav" data-to="payments"><span class="ico">₿</span> Payments</button>
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
@@ -858,6 +885,67 @@ function openManualOrder() {
   setTimeout(() => $('#modal-root select[name=store]')?.focus(), 60);
 }
 
+/* ---------- Catalog / product & price editor ------------------------ */
+async function loadCatalog() {
+  if (cache.catalog !== undefined) return cache.catalog;
+  try { cache.catalog = await api.catalog(); } catch (e) { cache.catalog = (e.status === 404 || e.status === 400) ? null : []; }
+  return cache.catalog;
+}
+function priceRange(sizes) {
+  const cents = (sizes || []).map((s) => s[1]).filter((n) => n != null);
+  if (!cents.length) return '—';
+  const lo = Math.min(...cents), hi = Math.max(...cents);
+  return lo === hi ? money(lo) : money(lo) + '–' + money(hi);
+}
+async function viewCatalog() {
+  const root = $('#app');
+  root.innerHTML = topbar('Catalog', 'Products & prices') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('home');
+  const cat = await loadCatalog();
+  let html = topbar('Catalog', 'Products & prices', { left: `<button class="back-btn" data-action="back">‹</button>`, right: `<button class="icon-btn" data-action="product-add" aria-label="Add product">＋</button>` });
+  html += `<div class="view">`;
+  html += `<div class="banner">Edit products, prices and availability here. These drive the live storefront once the store reads its catalog from the database — turning a product <b>Hidden</b> pulls it from sale.</div>`;
+  if (cat === null) {
+    html += `<div class="card"><div class="empty"><div class="big">🛍️</div><h3>Enable Catalog</h3><p>Re-run <b>db/schema.sql</b> in Supabase to add the catalog columns.</p></div></div></div>` + bottomNav('home');
+    root.innerHTML = html; return;
+  }
+  const live = cat.filter((p) => p.active !== false).length;
+  html += `<div class="stats"><div class="stat"><div class="n">${cat.length}</div><div class="l">Products</div></div><div class="stat ${cat.length - live ? 'amber' : 'green'}"><div class="n">${cat.length - live}</div><div class="l">Hidden</div></div></div>`;
+  html += `<div class="section-title">All products</div><div class="card" style="padding:6px 16px">`;
+  html += cat.length ? cat.map((p) => `<div class="pc" data-action="product-edit" data-sku="${esc(p.sku)}">
+      <div class="pc-main"><div class="pc-name">${esc(p.name)}${p.kind && p.kind !== 'peptide' ? ` <span class="tag">${esc(p.kind)}</span>` : ''}</div><div class="pc-cls">${esc(p.cls || '')}</div></div>
+      <div class="pc-right"><div class="pc-price">${priceRange(p.sizes)}</div>
+        <button class="pill ${p.active === false ? 'st-idle' : 'st-fulfilled'}" data-action="product-toggle" data-sku="${esc(p.sku)}" style="font-size:11px">${p.active === false ? 'Hidden' : 'Live'}</button></div>
+    </div>`).join('') : `<div class="hint" style="padding:12px 0;text-align:center">No products yet — add one with ＋.</div>`;
+  html += `</div></div>` + bottomNav('home');
+  root.innerHTML = html;
+}
+function sizeLineHtml(label, dollars) {
+  return `<div class="sz-line">
+    <input class="input sz-label" name="sz_label" placeholder="5 mg" value="${esc(label || '')}" autocomplete="off" />
+    <input class="input sz-price" name="sz_price" type="number" min="0" step="0.01" placeholder="$" value="${dollars != null ? esc(dollars) : ''}" inputmode="decimal" />
+    <button type="button" class="ml-del" data-action="sz-del" aria-label="Remove">✕</button>
+  </div>`;
+}
+function openEditProduct(sku) {
+  const p = sku ? (cache.catalog || []).find((x) => x.sku === sku) : null;
+  const kinds = ['peptide', 'duo', 'blend'].map((k) => `<option value="${k}" ${p && p.kind === k ? 'selected' : ''}>${k[0].toUpperCase() + k.slice(1)}</option>`).join('');
+  const sizeLines = ((p && p.sizes) || [['', '']]).map((s) => sizeLineHtml(s[0], s[1] != null && s[1] !== '' ? (s[1] / 100) : '')).join('');
+  openSheet(`<h3>${p ? 'Edit product' : 'New product'}</h3>
+    <form data-action="save-product" data-sku="${esc(p ? p.sku : '')}">
+      <div class="field"><label>Name</label><input class="input" name="name" value="${esc(p ? p.name : '')}" placeholder="BPC-157" autocomplete="off" required /></div>
+      <div class="field"><label>SKU ${p ? '' : '<span style="color:var(--faint)">(letters/numbers)</span>'}</label><input class="input" name="sku" value="${esc(p ? p.sku : '')}" placeholder="BPC157" autocomplete="off" ${p ? 'readonly style="opacity:.6"' : 'required'} /></div>
+      <div class="field"><label>Class / identity line</label><input class="input" name="cls" value="${esc(p ? p.cls || '' : '')}" placeholder="Pentadecapeptide" autocomplete="off" /></div>
+      <div class="field"><label>Kind</label><select class="selectbox" name="kind">${kinds}</select></div>
+      <div class="field"><label>Blurb</label><textarea class="input" name="blurb" rows="2" placeholder="Identity / mechanism — no claims" autocomplete="off" style="resize:vertical">${esc(p ? p.blurb || '' : '')}</textarea></div>
+      <label style="display:block;font-size:13px;font-weight:650;color:var(--muted);margin-bottom:7px">Sizes & prices</label>
+      <div id="sz-lines">${sizeLines}</div>
+      <button type="button" class="btn sm ghost" data-action="sz-add" style="margin:2px 0 14px">＋ Add size</button>
+      <div class="field"><label>Availability</label><select class="selectbox" name="active"><option value="true" ${!p || p.active !== false ? 'selected' : ''}>Live — on sale</option><option value="false" ${p && p.active === false ? 'selected' : ''}>Hidden — off sale</option></select></div>
+      <div class="btn-row"><button class="btn primary" type="submit">Save</button>${p ? `<button class="btn danger" type="button" data-action="product-delete" data-sku="${esc(p.sku)}" style="color:var(--red);border-color:rgba(248,113,113,.4)">Delete</button>` : ''}</div>
+    </form>`);
+  setTimeout(() => $('#modal-root input[name=name]')?.focus(), 60);
+}
+
 /* ---------- Tasks / team ops ---------------------------------------- */
 const TPRIO = { high: 0, med: 1, low: 2 };
 async function loadTasks() {
@@ -1001,6 +1089,7 @@ async function render() {
   if (seg === 'lab') return viewLab();
   if (seg === 'payments') return viewPayments();
   if (seg === 'tasks') return viewTasks();
+  if (seg === 'catalog') return viewCatalog();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -1020,6 +1109,19 @@ document.addEventListener('click', async (e) => {
       openManualOrder();
       break;
     case 'task-edit': openEditTask(el.dataset.id); break;
+    case 'product-edit': openEditProduct(el.dataset.sku); break;
+    case 'product-add': openEditProduct(null); break;
+    case 'product-toggle': {
+      const p = (cache.catalog || []).find((x) => x.sku === el.dataset.sku);
+      if (p) { try { await api.saveProduct({ sku: p.sku, active: !(p.active !== false) }); cache.catalog = undefined; viewCatalog(); } catch (err) { toast(err.status === 400 ? 'Run catalog migration' : 'Update failed'); } }
+      break;
+    }
+    case 'product-delete': {
+      try { await api.deleteProduct(el.dataset.sku); cache.catalog = undefined; closeSheet(); toast('Product deleted'); viewCatalog(); } catch (err) { toast('Delete failed'); }
+      break;
+    }
+    case 'sz-add': { const box = $('#sz-lines'); if (box) box.insertAdjacentHTML('beforeend', sizeLineHtml('', '')); break; }
+    case 'sz-del': { const line = el.closest('.sz-line'); const box = $('#sz-lines'); if (line && box && box.querySelectorAll('.sz-line').length > 1) line.remove(); break; }
     case 'task-toggle': {
       const t = (cache.tasks || []).find((x) => String(x.id) === String(el.dataset.id));
       if (t) { try { await api.updateTask(t.id, { done: !t.done, done_at: !t.done ? new Date().toISOString() : null }); cache.tasks = undefined; viewTasks(); } catch (err) { toast('Update failed'); } }
@@ -1097,6 +1199,31 @@ document.addEventListener('submit', async (e) => {
       });
       toast('Marked shipped'); cache.orders = null; viewOrder(id);
     } catch (err) { btn.disabled = false; btn.textContent = 'Mark shipped & fulfilled'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const prod = e.target.closest('[data-action="save-product"]');
+  if (prod) {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(prod).entries());
+    const sku = (d.sku || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!sku) { toast('Enter a SKU'); return; }
+    const sizes = [];
+    prod.querySelectorAll('.sz-line').forEach((ln) => {
+      const label = ln.querySelector('.sz-label').value.trim();
+      const price = Math.round((parseFloat(ln.querySelector('.sz-price').value) || 0) * 100);
+      if (label && price) sizes.push([label, price]);
+    });
+    if (!sizes.length) { toast('Add at least one size + price'); return; }
+    const btn = prod.querySelector('button[type=submit]'); btn.textContent = 'Saving…'; btn.disabled = true;
+    try {
+      await api.saveProduct({
+        sku, peptide: (d.name || '').trim(), name: (d.name || '').trim(),
+        slug: (d.name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        cls: (d.cls || '').trim() || null, kind: d.kind || 'peptide',
+        blurb: (d.blurb || '').trim() || null, sizes, active: d.active !== 'false',
+      });
+      cache.catalog = undefined; closeSheet(); toast('Saved'); viewCatalog();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Save'; toast(err.status === 400 ? 'Run catalog migration first' : err.status === 401 ? 'Session expired' : 'Save failed'); }
     return;
   }
   const taskAdd = e.target.closest('[data-action="task-add"]');

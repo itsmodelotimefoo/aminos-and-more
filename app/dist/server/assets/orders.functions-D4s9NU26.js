@@ -1,4 +1,4 @@
-import { a3 as TSS_SERVER_FUNCTION, a4 as createServerFn } from "./server-C0CyT6Iu.js";
+import { a3 as TSS_SERVER_FUNCTION, a4 as createServerFn } from "./server-3boKDppH.js";
 import { o as object, b as string, g as getOrder } from "./orders.server-DVmQ-msp.js";
 import "node:async_hooks";
 import "node:stream";

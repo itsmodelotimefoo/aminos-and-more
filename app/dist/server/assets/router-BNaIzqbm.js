@@ -1,4 +1,4 @@
-import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet } from "./server-C0CyT6Iu.js";
+import { r as reactExports, i as isPromise, a as isRedirect, b as isNotFound, c as invariant, d as createControlledPromise, e as rootRouteId, f as isServer$1, g as functionalUpdate$1, h as arraysEqual, j as createLRUCache, k as compileDecodeCharMap, t as trimPath, l as rewriteBasepath, m as composeRewrites, p as processRouteTree, n as processRouteMasks, o as resolvePath, q as cleanPath, s as trimPathRight, u as parseHref, v as executeRewriteInput, w as isDangerousProtocol, x as redirect, y as findSingleMatch, z as deepEqual, D as DEFAULT_PROTOCOL_ALLOWLIST, A as buildRouteBranch, B as interpolatePath, C as nullReplaceEqualDeep, E as replaceEqualDeep$1, F as last, G as decodePath, H as findFlatMatch, I as findRouteMatch, J as hasKeys, K as executeRewriteOutput, L as encodePathLikeUrl, M as trimPathLeft, N as joinPaths, O as useRouter, P as dummyMatchContext, Q as matchContext, R as requireReactDom, S as exactPathTest, T as removeTrailingSlash, U as React, V as jsxRuntimeExports, W as isModuleNotFoundError, X as useHydrated, Y as escapeHtml, Z as getAssetCrossOrigin, _ as getScriptPreloadAttrs, $ as appendUniqueUserTags, a0 as resolveManifestCssLink, a1 as Outlet } from "./server-3boKDppH.js";
 import { env } from "cloudflare:workers";
 import { g as getOrder, u as updatePayment, s as setFulfillment, o as object, a as array, l as literal, b as string, n as number, i as insertOrder, c as setInvoiceId } from "./orders.server-DVmQ-msp.js";
 var reactUse = reactExports.use;
@@ -1204,17 +1204,17 @@ var RouterCore = class {
       if (!this.history.subscribers.size) this.load(historyAction ? { action: { type: historyAction } } : void 0);
       return this.commitLocationPromise;
     };
-    this.buildAndCommitLocation = ({ replace, resetScroll, hashScrollIntoView, viewTransition, ignoreBlocker, href, ...rest } = {}) => {
+    this.buildAndCommitLocation = ({ replace, resetScroll, hashScrollIntoView, viewTransition, ignoreBlocker, href, ...rest2 } = {}) => {
       if (href) {
         const currentIndex = this.history.location.state.__TSR_index;
         const parsed = parseHref(href, { __TSR_index: replace ? currentIndex : currentIndex + 1 });
         const hrefUrl = new URL(parsed.pathname, this.origin);
-        rest.to = executeRewriteInput(this.rewrite, hrefUrl).pathname;
-        rest.search = this.options.parseSearch(parsed.search);
-        rest.hash = parsed.hash.slice(1);
+        rest2.to = executeRewriteInput(this.rewrite, hrefUrl).pathname;
+        rest2.search = this.options.parseSearch(parsed.search);
+        rest2.hash = parsed.hash.slice(1);
       }
       const location = this.buildLocation({
-        ...rest,
+        ...rest2,
         _includeValidateSearch: true
       });
       this.pendingBuiltLocation = location;
@@ -1231,7 +1231,7 @@ var RouterCore = class {
       });
       return commitPromise;
     };
-    this.navigate = async ({ to, reloadDocument, href, publicHref, ...rest }) => {
+    this.navigate = async ({ to, reloadDocument, href, publicHref, ...rest2 }) => {
       let hrefIsUrl = false;
       if (href) try {
         new URL(`${href}`);
@@ -1243,7 +1243,7 @@ var RouterCore = class {
         if (to !== void 0 || !href) {
           const location = this.buildLocation({
             to,
-            ...rest
+            ...rest2
           });
           href = href ?? location.publicHref;
           publicHref = publicHref ?? location.publicHref;
@@ -1252,7 +1252,7 @@ var RouterCore = class {
         if (isDangerousProtocol(reloadHref, this.protocolAllowlist)) {
           return;
         }
-        if (!rest.ignoreBlocker) {
+        if (!rest2.ignoreBlocker) {
           const blockers = this.history.getBlockers?.() ?? [];
           for (const blocker of blockers) if (blocker?.blockerFn) {
             if (await blocker.blockerFn({
@@ -1262,12 +1262,12 @@ var RouterCore = class {
             })) return;
           }
         }
-        if (rest.replace) window.location.replace(reloadHref);
+        if (rest2.replace) window.location.replace(reloadHref);
         else window.location.href = reloadHref;
         return;
       }
       return this.buildAndCommitLocation({
-        ...rest,
+        ...rest2,
         href,
         to,
         _isNavigate: true
@@ -2028,9 +2028,9 @@ function useLoaderData(opts) {
   });
 }
 function useLoaderDeps(opts) {
-  const { select, ...rest } = opts;
+  const { select, ...rest2 } = opts;
   return useMatch({
-    ...rest,
+    ...rest2,
     select: (match) => {
       return select ? select(match.loaderDeps) : match.loaderDeps;
     }
@@ -2237,12 +2237,12 @@ function isSafeInternal(to) {
   return zero === 46;
 }
 var Link = reactExports.forwardRef((props, ref) => {
-  const { _asChild, ...rest } = props;
-  const { type: _type, ...linkProps } = useLinkProps(rest, ref);
-  const children = typeof rest.children === "function" ? rest.children({ isActive: linkProps["data-status"] === "active" }) : rest.children;
+  const { _asChild, ...rest2 } = props;
+  const { type: _type, ...linkProps } = useLinkProps(rest2, ref);
+  const children = typeof rest2.children === "function" ? rest2.children({ isActive: linkProps["data-status"] === "active" }) : rest2.children;
   if (!_asChild) {
-    const { disabled: _, ...rest2 } = linkProps;
-    return reactExports.createElement("a", rest2, children);
+    const { disabled: _, ...rest22 } = linkProps;
+    return reactExports.createElement("a", rest22, children);
   }
   return reactExports.createElement(_asChild, linkProps, children);
 });
@@ -5220,11 +5220,11 @@ function typography(options = {}, ...extra) {
   return cx(VARIANT_CLASS$1[variant], color && COLOR_CLASS[color], truncate && "truncate", ...extra);
 }
 function Typography(props) {
-  const { as, variant = "body-md-regular", color, truncate, className, ...rest } = props;
+  const { as, variant = "body-md-regular", color, truncate, className, ...rest2 } = props;
   return reactExports.createElement(as ?? "p", {
     // className LAST so callers win.
     className: typography({ variant, color, truncate }, className),
-    ...rest
+    ...rest2
   });
 }
 const SIZE_CLASS = {
@@ -5411,7 +5411,7 @@ function RootComponent() {
   }, []);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter$7 = () => import("./testing-BPgTLFXE.js");
+const $$splitComponentImporter$7 = () => import("./testing-BPNkmP4R.js");
 const Route$c = createFileRoute("/testing")({
   head: () => ({
     meta: [{
@@ -5644,7 +5644,7 @@ const Route$a = createFileRoute("/robots.txt")({
     }
   }
 });
-const $$splitComponentImporter$6 = () => import("./join-BK4mduke.js");
+const $$splitComponentImporter$6 = () => import("./join-DDq2Fjdc.js");
 const Route$9 = createFileRoute("/join")({
   head: () => ({
     meta: [{
@@ -5656,7 +5656,7 @@ const Route$9 = createFileRoute("/join")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$6, "component")
 });
-const $$splitComponentImporter$5 = () => import("./checkout-success-2k3H9AUo.js");
+const $$splitComponentImporter$5 = () => import("./checkout-success-Dmk4rW1V.js");
 const Route$8 = createFileRoute("/checkout-success")({
   validateSearch: (s) => ({
     order: typeof s.order === "string" ? s.order : void 0
@@ -5671,7 +5671,7 @@ const Route$8 = createFileRoute("/checkout-success")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$5, "component")
 });
-const $$splitComponentImporter$4 = () => import("./checkout-DhdC3H9Z.js");
+const $$splitComponentImporter$4 = () => import("./checkout-wz4qCW_L.js");
 const Route$7 = createFileRoute("/checkout")({
   head: () => ({
     meta: [{
@@ -5683,7 +5683,7 @@ const Route$7 = createFileRoute("/checkout")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$4, "component")
 });
-const $$splitComponentImporter$3 = () => import("./catalog-BwQ2dU9i.js");
+const $$splitComponentImporter$3 = () => import("./catalog-U84Sh_sf.js");
 const Route$6 = createFileRoute("/catalog")({
   head: () => ({
     meta: [{
@@ -5695,7 +5695,7 @@ const Route$6 = createFileRoute("/catalog")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-const $$splitComponentImporter$2 = () => import("./about-BSL_p2ca.js");
+const $$splitComponentImporter$2 = () => import("./about-DEV0nUhg.js");
 const Route$5 = createFileRoute("/about")({
   head: () => ({
     meta: [{
@@ -5707,11 +5707,11 @@ const Route$5 = createFileRoute("/about")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$2, "component")
 });
-const $$splitComponentImporter$1 = () => import("./index-swqea6XR.js");
+const $$splitComponentImporter$1 = () => import("./index-DwStl4ga.js");
 const Route$4 = createFileRoute("/")({
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./products._slug-DqnIjWuc.js");
+const $$splitComponentImporter = () => import("./products._slug-CUpcK-jK.js");
 const Route$3 = createFileRoute("/products/$slug")({
   head: ({
     params
@@ -5891,6 +5891,89 @@ async function buyLabel(rateId) {
     carrier: String(tx.rate?.provider ?? "")
   };
 }
+function cfg() {
+  const e = env;
+  const url = e.SUPABASE_URL;
+  const key = e.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  return { url, key, store: e.STORE_SLUG || "aminos" };
+}
+async function rest(path, init) {
+  const c = cfg();
+  if (!c) return;
+  try {
+    const res = await fetch(`${c.url}/rest/v1${path}`, {
+      ...init,
+      headers: {
+        apikey: c.key,
+        Authorization: `Bearer ${c.key}`,
+        "Content-Type": "application/json",
+        ...init.headers || {}
+      }
+    });
+    if (!res.ok) {
+      console.error("supabase mirror failed", res.status, (await res.text()).slice(0, 200));
+    }
+  } catch (e) {
+    console.error("supabase mirror error", e);
+  }
+}
+async function mirrorUpsertOrder(o) {
+  const c = cfg();
+  if (!c) return;
+  await rest("/orders?on_conflict=id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      id: o.id,
+      store_slug: c.store,
+      status: "pending",
+      email: o.email,
+      items: o.items,
+      subtotal_cents: o.subtotalCents,
+      shipping_cents: o.shippingCents,
+      tax_cents: o.taxCents,
+      total_cents: o.totalCents,
+      certified_21: o.certified21,
+      certified_researcher: o.certifiedResearcher,
+      ship_name: o.ship.name,
+      ship_street1: o.ship.street1,
+      ship_street2: o.ship.street2,
+      ship_city: o.ship.city,
+      ship_state: o.ship.state,
+      ship_zip: o.ship.zip,
+      ship_country: o.ship.country,
+      ship_phone: o.ship.phone,
+      shippo_rate_id: o.shippoRateId,
+      ship_carrier: o.carrier,
+      ship_service: o.service,
+      np_invoice_id: o.npInvoiceId ?? null
+    })
+  });
+}
+async function mirrorPayment(orderId, f) {
+  const patch = { status: f.status };
+  if (f.npPaymentId != null) patch.np_payment_id = f.npPaymentId;
+  if (f.npPaymentStatus != null) patch.np_payment_status = f.npPaymentStatus;
+  if (f.payCurrency != null) patch.pay_currency = f.payCurrency;
+  await rest(`/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(patch)
+  });
+}
+async function mirrorFulfillment(orderId, f) {
+  await rest(`/orders?id=eq.${encodeURIComponent(orderId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      status: "fulfilled",
+      tracking_carrier: f.carrier,
+      tracking_number: f.tracking,
+      label_url: f.labelUrl
+    })
+  });
+}
 const Route$2 = createFileRoute("/api/ipn")({
   server: {
     handlers: {
@@ -5915,11 +5998,22 @@ const Route$2 = createFileRoute("/api/ipn")({
             npPaymentStatus: paymentStatus || null,
             payCurrency: payload.pay_currency != null ? String(payload.pay_currency) : null
           });
+          await mirrorPayment(orderId, {
+            status: mapped,
+            npPaymentId: payload.payment_id != null ? String(payload.payment_id) : null,
+            npPaymentStatus: paymentStatus || null,
+            payCurrency: payload.pay_currency != null ? String(payload.pay_currency) : null
+          });
         }
         if (mapped === "paid" && order.status !== "fulfilled" && order.shippo_rate_id) {
           try {
             const label = await buyLabel(order.shippo_rate_id);
             await setFulfillment(orderId, {
+              carrier: label.carrier || order.ship_carrier || "",
+              tracking: label.tracking,
+              labelUrl: label.labelUrl
+            });
+            await mirrorFulfillment(orderId, {
               carrier: label.carrier || order.ship_carrier || "",
               tracking: label.tracking,
               labelUrl: label.labelUrl
@@ -6204,6 +6298,31 @@ const Route2 = createFileRoute("/api/checkout/create")({
             cancelUrl: `${origin}/checkout?canceled=1`
           });
           await setInvoiceId(orderId, invoice.invoiceId);
+          await mirrorUpsertOrder({
+            id: orderId,
+            email: d.email,
+            items: priced,
+            subtotalCents: subtotal,
+            shippingCents: d.shippingCents,
+            taxCents: tax,
+            totalCents: total,
+            certified21: d.certified21,
+            certifiedResearcher: d.certifiedResearcher,
+            ship: {
+              name: d.address.name,
+              street1: d.address.street1,
+              street2: d.address.street2 ?? "",
+              city: d.address.city,
+              state: d.address.state,
+              zip: d.address.zip,
+              country: d.address.country,
+              phone: d.address.phone ?? ""
+            },
+            shippoRateId: d.shippoRateId,
+            carrier: d.carrier,
+            service: d.service,
+            npInvoiceId: invoice.invoiceId
+          });
           return json({ orderId, invoiceUrl: invoice.invoiceUrl });
         } catch (e) {
           return json({ error: e instanceof Error ? e.message : "Checkout failed." }, 502);

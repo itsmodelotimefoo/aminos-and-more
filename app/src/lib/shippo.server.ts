@@ -7,23 +7,40 @@ import type { Address, CartLine, RateOption } from "./checkout";
 const SHIPPO_BASE = "https://api.goshippo.com";
 
 function token(): string {
-  const t = (env as Record<string, string | undefined>).SHIPPO_API_TOKEN;
-  if (!t) throw new Error("SHIPPO_API_TOKEN is not configured.");
-  return t;
+  const raw = (env as Record<string, string | undefined>).SHIPPO_API_TOKEN;
+  if (!raw) throw new Error("SHIPPO_API_TOKEN is not configured.");
+  // Trim: a trailing newline/space from a paste is a common cause of 401s.
+  return raw.trim();
+}
+
+// Describes the configured token WITHOUT revealing it — no secret characters,
+// only its length, which family it belongs to, and whether it had stray
+// whitespace. Used to diagnose 401s.
+function tokenShape(): string {
+  const raw = (env as Record<string, string | undefined>).SHIPPO_API_TOKEN ?? "";
+  const t = raw.trim();
+  const kind = t.startsWith("shippo_test_")
+    ? "test"
+    : t.startsWith("shippo_live_")
+      ? "live"
+      : t.startsWith("shippo_")
+        ? "shippo_other"
+        : "NOT_A_SHIPPO_TOKEN";
+  return `len=${t.length} kind=${kind} strayWhitespace=${raw !== t}`;
 }
 
 // Ship-from origin. EDIT THESE to the real warehouse address before going live
 // (or move to a Worker secret). Shippo needs a complete, valid US address to
 // return live rates.
 const SHIP_FROM = {
-  name: "Aminos & More Fulfillment",
-  street1: "1 Research Way",
+  name: "White Label Labs",
+  street1: "1234 Main St",
   city: "Austin",
   state: "TX",
   zip: "78701",
   country: "US",
-  phone: "0000000000",
-  email: "orders@aminos-and-more.example",
+  phone: "5125551234",
+  email: "orders@getwll.com",
 };
 
 // One small parcel covers the vial SKUs (lyophilized, light). Tune as needed.
@@ -47,7 +64,10 @@ async function shippoFetch(path: string, body: unknown): Promise<any> {
   });
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(`Shippo ${path} failed (${res.status}): ${JSON.stringify(json).slice(0, 300)}`);
+    const hint = res.status === 401 ? ` [token: ${tokenShape()}]` : "";
+    throw new Error(
+      `Shippo ${path} failed (${res.status}): ${JSON.stringify(json).slice(0, 300)}${hint}`,
+    );
   }
   return json;
 }

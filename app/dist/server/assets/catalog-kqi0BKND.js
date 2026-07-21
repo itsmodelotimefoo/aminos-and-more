@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-DK7m8F3m.js";
-import { S as SiteLayout, P as ProductCard } from "./Chrome-BqPh95qA.js";
-import { R as Route } from "./router-CxP_W5sU.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-CnJ7KbaK.js";
+import { S as SiteLayout, P as ProductCard } from "./Chrome-BO1Gz7ua.js";
+import { R as Route } from "./router-Duj6h01X.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,7 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./catalog.server-DY48yXMl.js";
+import "./catalog.server-C18DQUTb.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 const FILTERS = [{
@@ -41,7 +41,7 @@ function Catalog() {
       paddingTop: 30
     }, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "filters", children: FILTERS.map((f) => /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: sel === f.k ? "sel" : "", onClick: () => setSel(f.k), children: f.label }, f.k)) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "cards", children: shown.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProductCard, { p, soldOut: (stock[p.slug] ?? 1) <= 0 }, p.slug)) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "cards", children: shown.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProductCard, { p, avail: stock[p.slug] }, p.slug)) })
     ] }) })
   ] });
 }

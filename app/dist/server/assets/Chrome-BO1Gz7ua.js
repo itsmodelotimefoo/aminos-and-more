@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-DK7m8F3m.js";
-import { L as Link } from "./router-CxP_W5sU.js";
-import { f as fromPrice } from "./catalog.server-DY48yXMl.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-CnJ7KbaK.js";
+import { L as Link } from "./router-Duj6h01X.js";
+import { f as fromPrice, L as LOW_STOCK } from "./catalog.server-C18DQUTb.js";
 const KEY = "am_cart_v1";
 const EVENT = "am-cart-change";
 function isBrowser() {
@@ -144,7 +144,9 @@ function Marquee() {
     " ·"
   ] }, i)) }) });
 }
-function ProductCard({ p, soldOut }) {
+function ProductCard({ p, avail }) {
+  const soldOut = avail != null && avail <= 0;
+  const low = avail != null && avail > 0 && avail <= LOW_STOCK;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     Link,
     {
@@ -154,7 +156,11 @@ function ProductCard({ p, soldOut }) {
       style: { "--accent": p.accent, ...soldOut ? { opacity: 0.62 } : {} },
       children: [
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "imgwrap", children: [
-          soldOut ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag", style: { color: "var(--muted)" }, children: "Sold out" }) : p.tag ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag", children: p.tag }) : null,
+          soldOut ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag", style: { color: "var(--muted)" }, children: "Sold out" }) : low ? /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "tag", style: { color: "#e0902f" }, children: [
+            "Only ",
+            avail,
+            " left"
+          ] }) : p.tag ? /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "tag", children: p.tag }) : null,
           /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "glow" }),
           /* @__PURE__ */ jsxRuntimeExports.jsx("img", { loading: "lazy", decoding: "async", src: p.img, alt: p.name })
         ] }),

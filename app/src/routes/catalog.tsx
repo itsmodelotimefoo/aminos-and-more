@@ -51,7 +51,7 @@ function Catalog() {
           </div>
           <div className="cards">
             {shown.map((p) => (
-              <ProductCard key={p.slug} p={p} soldOut={(stock[p.slug] ?? 1) <= 0} />
+              <ProductCard key={p.slug} p={p} avail={stock[p.slug]} />
             ))}
           </div>
         </div>

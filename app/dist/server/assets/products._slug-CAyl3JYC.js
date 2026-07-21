@@ -1,6 +1,7 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-DK7m8F3m.js";
-import { b as Route, L as Link } from "./router-CxP_W5sU.js";
-import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-BqPh95qA.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-CnJ7KbaK.js";
+import { b as Route, L as Link } from "./router-Duj6h01X.js";
+import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-BO1Gz7ua.js";
+import { L as LOW_STOCK } from "./catalog.server-C18DQUTb.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,7 +9,6 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./catalog.server-DY48yXMl.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function ProductPage() {
@@ -34,7 +34,9 @@ function ProductPage() {
   }
   const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
-  const soldOut = (stock[p.slug] ?? 1) <= 0;
+  const avail = stock[p.slug];
+  const soldOut = (avail ?? 1) <= 0;
+  const low = avail != null && avail > 0 && avail <= LOW_STOCK;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(SiteLayout, { active: "catalog", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pdp", style: {
       "--accent": p.accent
@@ -74,6 +76,16 @@ function ProductPage() {
             }, children: "+" })
           ] })
         ] }),
+        low && !soldOut ? /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { style: {
+          margin: "0 0 10px",
+          color: "#e0902f",
+          fontWeight: 600,
+          fontSize: 13.5
+        }, children: [
+          "Only ",
+          avail,
+          " left in stock — order soon."
+        ] }) : null,
         /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "btn", style: {
           width: "100%",
           padding: 15,

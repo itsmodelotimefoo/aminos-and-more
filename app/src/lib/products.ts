@@ -188,6 +188,10 @@ export function fromPrice(p: Product): string {
   return "from $" + Math.min(...p.sizes.map((s) => s[1]));
 }
 
+// At or below this many units on hand, the store shows a "Only N left" urgency
+// cue (0 → "Sold out"). Only applies when the storefront reads live inventory.
+export const LOW_STOCK = 10;
+
 export const KIND_LABEL: Record<ProductKind, string> = {
   peptide: "Compound",
   duo: "Duo",

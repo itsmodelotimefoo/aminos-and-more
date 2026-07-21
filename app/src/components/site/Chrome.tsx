@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode, type CSSProperties } from "react";
-import { PRODUCTS, fromPrice, type Product } from "../../lib/products";
+import { PRODUCTS, fromPrice, LOW_STOCK, type Product } from "../../lib/products";
 import { useCart } from "../../lib/cart";
 
 const AGE_KEY = "am_age_ok";
@@ -131,7 +131,9 @@ export function Marquee() {
   );
 }
 
-export function ProductCard({ p, soldOut }: { p: Product; soldOut?: boolean }) {
+export function ProductCard({ p, avail }: { p: Product; avail?: number }) {
+  const soldOut = avail != null && avail <= 0;
+  const low = avail != null && avail > 0 && avail <= LOW_STOCK;
   return (
     <Link
       to="/products/$slug"
@@ -143,6 +145,10 @@ export function ProductCard({ p, soldOut }: { p: Product; soldOut?: boolean }) {
         {soldOut ? (
           <span className="tag" style={{ color: "var(--muted)" }}>
             Sold out
+          </span>
+        ) : low ? (
+          <span className="tag" style={{ color: "#e0902f" }}>
+            Only {avail} left
           </span>
         ) : p.tag ? (
           <span className="tag">{p.tag}</span>

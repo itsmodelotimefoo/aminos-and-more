@@ -162,6 +162,7 @@ function getProduct(slug) {
 function fromPrice(p) {
   return "from $" + Math.min(...p.sizes.map((s) => s[1]));
 }
+const LOW_STOCK = 10;
 function cfg() {
   const e = env;
   if (e.CATALOG_FROM_DB !== "1") return null;
@@ -241,6 +242,7 @@ async function getStock() {
   }
 }
 export {
+  LOW_STOCK as L,
   getProduct as a,
   getStock as b,
   fromPrice as f,

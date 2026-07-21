@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-DK7m8F3m.js";
-import { a as Route, L as Link } from "./router-CxP_W5sU.js";
-import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-BqPh95qA.js";
+import { V as jsxRuntimeExports } from "./server-CnJ7KbaK.js";
+import { a as Route, L as Link } from "./router-Duj6h01X.js";
+import { S as SiteLayout, M as Marquee, P as ProductCard } from "./Chrome-BO1Gz7ua.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,7 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./catalog.server-DY48yXMl.js";
+import "./catalog.server-C18DQUTb.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function Index() {
@@ -62,7 +62,7 @@ function Index() {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("p", { children: "Drawn from what the molecule actually does. The art tells the mechanism; the label tells the truth." })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "cards", children: featured.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProductCard, { p, soldOut: (stock[p.slug] ?? 1) <= 0 }, p.slug)) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "cards", children: featured.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProductCard, { p, avail: stock[p.slug] }, p.slug)) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "center", style: {
         marginTop: 34
       }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/catalog", className: "btn", children: "See the full catalog →" }) })

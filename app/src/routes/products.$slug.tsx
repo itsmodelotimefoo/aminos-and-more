@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
-import { getProduct } from "../lib/products";
+import { getProduct, LOW_STOCK } from "../lib/products";
 import { loadCatalog, loadStock } from "../lib/api/catalog.functions";
 import { addLine } from "../lib/cart";
 
@@ -52,7 +52,9 @@ function ProductPage() {
 
   const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
-  const soldOut = (stock[p.slug] ?? 1) <= 0; // no stock entry (e.g. static mode) → buyable
+  const avail = stock[p.slug];
+  const soldOut = (avail ?? 1) <= 0; // no stock entry (e.g. static mode) → buyable
+  const low = avail != null && avail > 0 && avail <= LOW_STOCK;
 
   return (
     <SiteLayout active="catalog">
@@ -114,6 +116,12 @@ function ProductPage() {
                 </button>
               </div>
             </div>
+
+            {low && !soldOut ? (
+              <p style={{ margin: "0 0 10px", color: "#e0902f", fontWeight: 600, fontSize: 13.5 }}>
+                Only {avail} left in stock — order soon.
+              </p>
+            ) : null}
 
             <button
               type="button"

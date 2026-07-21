@@ -90,6 +90,39 @@ export async function getCatalogProduct(slug: string): Promise<Product | undefin
 type InvEmbed = { slug?: string; inventory?: { on_hand?: number } | { on_hand?: number }[] | null };
 let _stock: { at: number; data: Record<string, number> } | null = null;
 
+// Per-size availability: { slug: { "5 mg": 12, "10 mg": 0 } }. Opt-in via
+// SIZE_STOCK=1 (needs a `size_stock` table). Off / error / no table → {}, and
+// the store falls back to product-level stock — exactly today's behavior.
+type SizeRow = { slug?: string; size?: string; on_hand?: number };
+let _sizeStock: { at: number; data: Record<string, Record<string, number>> } | null = null;
+
+export async function getSizeStock(): Promise<Record<string, Record<string, number>>> {
+  const c = cfg();
+  const e = env as Record<string, string | undefined>;
+  if (!c || e.SIZE_STOCK !== "1") return {};
+  const ttl = Number(e.CATALOG_TTL_MS) || 60_000;
+  const now = Date.now();
+  if (_sizeStock && now - _sizeStock.at < ttl) return _sizeStock.data;
+  try {
+    const res = await fetch(`${c.url}/rest/v1/size_stock?select=slug,size,on_hand`, {
+      headers: { apikey: c.key, Authorization: `Bearer ${c.key}` },
+    });
+    if (!res.ok) return _sizeStock?.data ?? {};
+    const rows = (await res.json()) as SizeRow[];
+    const map: Record<string, Record<string, number>> = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug || !r.size) continue;
+        (map[r.slug] ||= {})[r.size] = typeof r.on_hand === "number" ? r.on_hand : 0;
+      }
+    }
+    _sizeStock = { at: now, data: map };
+    return map;
+  } catch {
+    return _sizeStock?.data ?? {};
+  }
+}
+
 export async function getStock(): Promise<Record<string, number>> {
   const c = cfg();
   if (!c) return {};

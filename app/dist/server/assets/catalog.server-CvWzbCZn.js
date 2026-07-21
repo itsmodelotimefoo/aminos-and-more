@@ -214,6 +214,33 @@ async function getCatalog() {
   }
 }
 let _stock = null;
+let _sizeStock = null;
+async function getSizeStock() {
+  const c = cfg();
+  const e = env;
+  if (!c || e.SIZE_STOCK !== "1") return {};
+  const ttl = Number(e.CATALOG_TTL_MS) || 6e4;
+  const now = Date.now();
+  if (_sizeStock && now - _sizeStock.at < ttl) return _sizeStock.data;
+  try {
+    const res = await fetch(`${c.url}/rest/v1/size_stock?select=slug,size,on_hand`, {
+      headers: { apikey: c.key, Authorization: `Bearer ${c.key}` }
+    });
+    if (!res.ok) return _sizeStock?.data ?? {};
+    const rows = await res.json();
+    const map = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug || !r.size) continue;
+        (map[r.slug] ||= {})[r.size] = typeof r.on_hand === "number" ? r.on_hand : 0;
+      }
+    }
+    _sizeStock = { at: now, data: map };
+    return map;
+  } catch {
+    return _sizeStock?.data ?? {};
+  }
+}
 async function getStock() {
   const c = cfg();
   if (!c) return {};
@@ -245,6 +272,7 @@ export {
   LOW_STOCK as L,
   getProduct as a,
   getStock as b,
+  getSizeStock as c,
   fromPrice as f,
   getCatalog as g
 };

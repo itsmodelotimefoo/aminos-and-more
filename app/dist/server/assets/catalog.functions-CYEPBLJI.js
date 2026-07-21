@@ -1,6 +1,6 @@
-import { c as createServerRpc } from "./createServerRpc-CbGzWSpN.js";
-import { a4 as createServerFn } from "./server-CnJ7KbaK.js";
-import { g as getCatalog, b as getStock } from "./catalog.server-C18DQUTb.js";
+import { c as createServerRpc } from "./createServerRpc-BBNZ-0QS.js";
+import { a4 as createServerFn } from "./server-CTuinIJA.js";
+import { g as getCatalog, b as getStock, c as getSizeStock } from "./catalog.server-CvWzbCZn.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -29,7 +29,18 @@ const loadStock = createServerFn({
 }).handler(loadStock_createServerFn_handler, async () => {
   return await getStock();
 });
+const loadSizeStock_createServerFn_handler = createServerRpc({
+  id: "c95b7f9f1d39da392830c397681f8244027e4ae04e50b455956f6044debc1464",
+  name: "loadSizeStock",
+  filename: "src/lib/api/catalog.functions.ts"
+}, (opts) => loadSizeStock.__executeServer(opts));
+const loadSizeStock = createServerFn({
+  method: "GET"
+}).handler(loadSizeStock_createServerFn_handler, async () => {
+  return await getSizeStock();
+});
 export {
   loadCatalog_createServerFn_handler,
+  loadSizeStock_createServerFn_handler,
   loadStock_createServerFn_handler
 };

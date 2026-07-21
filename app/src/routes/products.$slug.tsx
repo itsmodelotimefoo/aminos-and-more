@@ -1,12 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
 import { getProduct, LOW_STOCK } from "../lib/products";
-import { loadCatalog, loadStock } from "../lib/api/catalog.functions";
+import { loadCatalog, loadStock, loadSizeStock } from "../lib/api/catalog.functions";
 import { addLine } from "../lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
-  loader: async () => ({ products: await loadCatalog(), stock: await loadStock() }),
+  loader: async () => ({
+    products: await loadCatalog(),
+    stock: await loadStock(),
+    sizeStock: await loadSizeStock(),
+  }),
   head: ({ params }) => {
     // Meta uses the static catalog (head is sync); the body renders the live one.
     const p = getProduct(params.slug);
@@ -28,11 +32,26 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { products, stock } = Route.useLoaderData();
+  const { products, stock, sizeStock } = Route.useLoaderData();
   const p = products.find((x) => x.slug === slug);
   const [sizeIdx, setSizeIdx] = useState(0);
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
+
+  // Per-size availability for this product (SIZE_STOCK on). When absent, availFor
+  // falls back to product-level stock — exactly today's behavior.
+  const sizeMap = p ? sizeStock[p.slug] : undefined;
+  const availFor = (label: string): number | undefined =>
+    sizeMap ? sizeMap[label] : p ? stock[p.slug] : undefined;
+
+  // Land on the first in-stock size so a customer doesn't open to a sold-out one.
+  useEffect(() => {
+    if (!p || !sizeMap) return;
+    if ((sizeMap[p.sizes[sizeIdx][0]] ?? 1) > 0) return; // current size is fine
+    const first = p.sizes.findIndex(([label]) => (sizeMap[label] ?? 1) > 0);
+    if (first >= 0 && first !== sizeIdx) setSizeIdx(first);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, sizeMap]);
 
   if (!p) {
     return (
@@ -52,7 +71,7 @@ function ProductPage() {
 
   const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
-  const avail = stock[p.slug];
+  const avail = availFor(p.sizes[sizeIdx][0]); // availability of the selected size
   const soldOut = (avail ?? 1) <= 0; // no stock entry (e.g. static mode) → buyable
   const low = avail != null && avail > 0 && avail <= LOW_STOCK;
 
@@ -74,20 +93,27 @@ function ProductPage() {
               Select size
             </div>
             <div className="sizes">
-              {p.sizes.map(([label, amt], i) => (
-                <button
-                  key={label}
-                  type="button"
-                  className={`size${i === sizeIdx ? " sel" : ""}`}
-                  onClick={() => {
-                    setSizeIdx(i);
-                    setAdded(false);
-                  }}
-                >
-                  <div className="mg">{label}</div>
-                  <div className="pr">${amt}</div>
-                </button>
-              ))}
+              {p.sizes.map(([label, amt], i) => {
+                const sSold = (availFor(label) ?? 1) <= 0;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`size${i === sizeIdx ? " sel" : ""}`}
+                    disabled={sSold}
+                    aria-disabled={sSold}
+                    style={sSold ? { opacity: 0.4 } : undefined}
+                    onClick={() => {
+                      if (sSold) return;
+                      setSizeIdx(i);
+                      setAdded(false);
+                    }}
+                  >
+                    <div className="mg">{label}</div>
+                    <div className="pr">{sSold ? "Sold out" : `$${amt}`}</div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="qtyrow">

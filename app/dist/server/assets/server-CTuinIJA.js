@@ -17053,7 +17053,7 @@ function getResponse() {
 }
 var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-ChmTPsO-.js");
+  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-CxH446uX.js");
   const startManifest = tsrStartManifest();
   let routes = startManifest.routes;
   routes[rootRouteId];
@@ -17075,15 +17075,19 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "3e225970265ca731cd1617a1ff3e08e3b988b9bd8e5797baff80e8296c6f3919": {
     functionName: "getOrderStatus_createServerFn_handler",
-    importer: () => import("./orders.functions-pRtZG4Y9.js")
+    importer: () => import("./orders.functions-AsCX96c0.js")
   },
   "686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8": {
     functionName: "loadCatalog_createServerFn_handler",
-    importer: () => import("./catalog.functions-D4m07YLL.js")
+    importer: () => import("./catalog.functions-CYEPBLJI.js")
   },
   "be416dbfa6eb196f1fbb3091655c95c73fe5e459d6de110e5879dd99c1aec864": {
     functionName: "loadStock_createServerFn_handler",
-    importer: () => import("./catalog.functions-D4m07YLL.js")
+    importer: () => import("./catalog.functions-CYEPBLJI.js")
+  },
+  "c95b7f9f1d39da392830c397681f8244027e4ae04e50b455956f6044debc1464": {
+    functionName: "loadSizeStock_createServerFn_handler",
+    importer: () => import("./catalog.functions-CYEPBLJI.js")
   }
 };
 async function getServerFnById(id, access) {
@@ -18324,8 +18328,8 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-Duj6h01X.js").then((n2) => n2.r),
-    import("./start-BwXoo07Z.js"),
+    import("./router-BWuUDbEg.js").then((n2) => n2.r),
+    import("./start-BzK0eLx9.js"),
     import("./empty-plugin-adapters-BFgPZ6_d.js")
   ]);
   return {

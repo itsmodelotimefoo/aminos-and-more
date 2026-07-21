@@ -212,8 +212,37 @@ async function getCatalog() {
     return _cache?.data ?? PRODUCTS;
   }
 }
+let _stock = null;
+async function getStock() {
+  const c = cfg();
+  if (!c) return {};
+  const ttl = Number(env.CATALOG_TTL_MS) || 6e4;
+  const now = Date.now();
+  if (_stock && now - _stock.at < ttl) return _stock.data;
+  try {
+    const res = await fetch(
+      `${c.url}/rest/v1/products?select=slug,inventory(on_hand)&active=eq.true`,
+      { headers: { apikey: c.key, Authorization: `Bearer ${c.key}` } }
+    );
+    if (!res.ok) return _stock?.data ?? {};
+    const rows = await res.json();
+    const map = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug) continue;
+        const inv = Array.isArray(r.inventory) ? r.inventory[0] : r.inventory;
+        if (inv && typeof inv.on_hand === "number") map[r.slug] = inv.on_hand;
+      }
+    }
+    _stock = { at: now, data: map };
+    return map;
+  } catch {
+    return _stock?.data ?? {};
+  }
+}
 export {
   getProduct as a,
+  getStock as b,
   fromPrice as f,
   getCatalog as g
 };

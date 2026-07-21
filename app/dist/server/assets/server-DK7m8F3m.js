@@ -17053,7 +17053,7 @@ function getResponse() {
 }
 var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-B7jGPNC3.js");
+  const { tsrStartManifest } = await import("./_tanstack-start-manifest_v-DASlL9rf.js");
   const startManifest = tsrStartManifest();
   let routes = startManifest.routes;
   routes[rootRouteId];
@@ -17075,11 +17075,15 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "3e225970265ca731cd1617a1ff3e08e3b988b9bd8e5797baff80e8296c6f3919": {
     functionName: "getOrderStatus_createServerFn_handler",
-    importer: () => import("./orders.functions-DamdG2Cu.js")
+    importer: () => import("./orders.functions-C9yonbPa.js")
   },
   "686ff7164d897b62df803ae23901282e0589041c96e71e92ff6bc89da3f757e8": {
     functionName: "loadCatalog_createServerFn_handler",
-    importer: () => import("./catalog.functions-C5Sakem1.js")
+    importer: () => import("./catalog.functions-Dr4-8Fcr.js")
+  },
+  "be416dbfa6eb196f1fbb3091655c95c73fe5e459d6de110e5879dd99c1aec864": {
+    functionName: "loadStock_createServerFn_handler",
+    importer: () => import("./catalog.functions-Dr4-8Fcr.js")
   }
 };
 async function getServerFnById(id, access) {
@@ -18320,8 +18324,8 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-cNU7FuqS.js").then((n2) => n2.r),
-    import("./start-B8fhuV8x.js"),
+    import("./router-CxP_W5sU.js").then((n2) => n2.r),
+    import("./start-FKQ8JEun.js"),
     import("./empty-plugin-adapters-BFgPZ6_d.js")
   ]);
   return {

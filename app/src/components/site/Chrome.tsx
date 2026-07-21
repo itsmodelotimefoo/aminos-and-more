@@ -131,16 +131,22 @@ export function Marquee() {
   );
 }
 
-export function ProductCard({ p }: { p: Product }) {
+export function ProductCard({ p, soldOut }: { p: Product; soldOut?: boolean }) {
   return (
     <Link
       to="/products/$slug"
       params={{ slug: p.slug }}
       className="card"
-      style={{ "--accent": p.accent } as CSSProperties}
+      style={{ "--accent": p.accent, ...(soldOut ? { opacity: 0.62 } : {}) } as CSSProperties}
     >
       <div className="imgwrap">
-        {p.tag ? <span className="tag">{p.tag}</span> : null}
+        {soldOut ? (
+          <span className="tag" style={{ color: "var(--muted)" }}>
+            Sold out
+          </span>
+        ) : p.tag ? (
+          <span className="tag">{p.tag}</span>
+        ) : null}
         <div className="glow" />
         <img loading="lazy" decoding="async" src={p.img} alt={p.name} />
       </div>
@@ -148,7 +154,7 @@ export function ProductCard({ p }: { p: Product }) {
         <div className="cls">{p.cls}</div>
         <div className="r">
           <h3>{p.name}</h3>
-          <span className="price">{fromPrice(p)}</span>
+          <span className="price">{soldOut ? "Sold out" : fromPrice(p)}</span>
         </div>
         <div className="coa">CoA published by lot</div>
       </div>

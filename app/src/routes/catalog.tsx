@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
-import { loadCatalog } from "../lib/api/catalog.functions";
+import { loadCatalog, loadStock } from "../lib/api/catalog.functions";
 
 export const Route = createFileRoute("/catalog")({
-  loader: async () => ({ products: await loadCatalog() }),
+  loader: async () => ({ products: await loadCatalog(), stock: await loadStock() }),
   head: () => ({
     meta: [
       { title: "Catalog — Aminos & More" },
@@ -26,7 +26,7 @@ const FILTERS = [
 ] as const;
 
 function Catalog() {
-  const { products } = Route.useLoaderData();
+  const { products, stock } = Route.useLoaderData();
   const [sel, setSel] = useState<string>("all");
   const shown = products.filter((p) => sel === "all" || p.kind === sel);
   return (
@@ -51,7 +51,7 @@ function Catalog() {
           </div>
           <div className="cards">
             {shown.map((p) => (
-              <ProductCard key={p.slug} p={p} />
+              <ProductCard key={p.slug} p={p} soldOut={(stock[p.slug] ?? 1) <= 0} />
             ))}
           </div>
         </div>

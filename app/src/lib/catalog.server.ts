@@ -84,3 +84,36 @@ export async function getCatalog(): Promise<Product[]> {
 export async function getCatalogProduct(slug: string): Promise<Product | undefined> {
   return (await getCatalog()).find((p) => p.slug === slug);
 }
+
+// Shared-inventory availability by product slug, for out-of-stock gating.
+// Flag off or any error → {} (no gating: the store behaves exactly as before).
+type InvEmbed = { slug?: string; inventory?: { on_hand?: number } | { on_hand?: number }[] | null };
+let _stock: { at: number; data: Record<string, number> } | null = null;
+
+export async function getStock(): Promise<Record<string, number>> {
+  const c = cfg();
+  if (!c) return {};
+  const ttl = Number((env as Record<string, string | undefined>).CATALOG_TTL_MS) || 60_000;
+  const now = Date.now();
+  if (_stock && now - _stock.at < ttl) return _stock.data;
+  try {
+    const res = await fetch(
+      `${c.url}/rest/v1/products?select=slug,inventory(on_hand)&active=eq.true`,
+      { headers: { apikey: c.key, Authorization: `Bearer ${c.key}` } },
+    );
+    if (!res.ok) return _stock?.data ?? {};
+    const rows = (await res.json()) as InvEmbed[];
+    const map: Record<string, number> = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug) continue;
+        const inv = Array.isArray(r.inventory) ? r.inventory[0] : r.inventory;
+        if (inv && typeof inv.on_hand === "number") map[r.slug] = inv.on_hand;
+      }
+    }
+    _stock = { at: now, data: map };
+    return map;
+  } catch {
+    return _stock?.data ?? {};
+  }
+}

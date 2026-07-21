@@ -1,6 +1,6 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-DFGxQB4F.js";
-import { b as Route, L as Link } from "./router-cNU7FuqS.js";
-import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-NTvpQSz1.js";
+import { r as reactExports, V as jsxRuntimeExports } from "./server-DK7m8F3m.js";
+import { b as Route, L as Link } from "./router-CxP_W5sU.js";
+import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-BqPh95qA.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -8,7 +8,7 @@ import "util";
 import "crypto";
 import "async_hooks";
 import "stream";
-import "./catalog.server-GU_wiFoQ.js";
+import "./catalog.server-DY48yXMl.js";
 import "cloudflare:workers";
 import "./orders.server-DVmQ-msp.js";
 function ProductPage() {
@@ -16,7 +16,8 @@ function ProductPage() {
     slug
   } = Route.useParams();
   const {
-    products
+    products,
+    stock
   } = Route.useLoaderData();
   const p = products.find((x) => x.slug === slug);
   const [sizeIdx, setSizeIdx] = reactExports.useState(0);
@@ -33,6 +34,7 @@ function ProductPage() {
   }
   const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
+  const soldOut = (stock[p.slug] ?? 1) <= 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(SiteLayout, { active: "catalog", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "wrap", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pdp", style: {
       "--accent": p.accent
@@ -74,8 +76,10 @@ function ProductPage() {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "btn", style: {
           width: "100%",
-          padding: 15
-        }, onClick: () => {
+          padding: 15,
+          opacity: soldOut ? 0.55 : 1
+        }, disabled: soldOut, onClick: () => {
+          if (soldOut) return;
           addLine({
             slug: p.slug,
             name: p.name,
@@ -84,7 +88,7 @@ function ProductPage() {
             qty
           });
           setAdded(true);
-        }, children: added ? "Added to cart ✓" : /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "cartline", children: [
+        }, children: soldOut ? "Sold out" : added ? "Added to cart ✓" : /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "cartline", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
             "Add to cart",
             qty > 1 ? ` · ${qty}` : ""

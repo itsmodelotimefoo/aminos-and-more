@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout, Marquee, ProductCard } from "../components/site/Chrome";
-import { loadCatalog } from "../lib/api/catalog.functions";
+import { loadCatalog, loadStock } from "../lib/api/catalog.functions";
 
 export const Route = createFileRoute("/")({
-  loader: async () => ({ products: await loadCatalog() }),
+  loader: async () => ({ products: await loadCatalog(), stock: await loadStock() }),
   component: Index,
 });
 
 function Index() {
-  const { products } = Route.useLoaderData();
+  const { products, stock } = Route.useLoaderData();
   const featured = products.slice(0, 6);
   return (
     <SiteLayout>
@@ -75,7 +75,7 @@ function Index() {
           </div>
           <div className="cards">
             {featured.map((p) => (
-              <ProductCard key={p.slug} p={p} />
+              <ProductCard key={p.slug} p={p} soldOut={(stock[p.slug] ?? 1) <= 0} />
             ))}
           </div>
           <p className="center" style={{ marginTop: 34 }}>

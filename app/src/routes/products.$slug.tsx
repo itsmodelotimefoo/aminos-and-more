@@ -2,11 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
 import { getProduct } from "../lib/products";
-import { loadCatalog } from "../lib/api/catalog.functions";
+import { loadCatalog, loadStock } from "../lib/api/catalog.functions";
 import { addLine } from "../lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
-  loader: async () => ({ products: await loadCatalog() }),
+  loader: async () => ({ products: await loadCatalog(), stock: await loadStock() }),
   head: ({ params }) => {
     // Meta uses the static catalog (head is sync); the body renders the live one.
     const p = getProduct(params.slug);
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/products/$slug")({
 
 function ProductPage() {
   const { slug } = Route.useParams();
-  const { products } = Route.useLoaderData();
+  const { products, stock } = Route.useLoaderData();
   const p = products.find((x) => x.slug === slug);
   const [sizeIdx, setSizeIdx] = useState(0);
   const [added, setAdded] = useState(false);
@@ -52,6 +52,7 @@ function ProductPage() {
 
   const more = products.filter((x) => x.slug !== p.slug).slice(0, 3);
   const price = p.sizes[sizeIdx][1];
+  const soldOut = (stock[p.slug] ?? 1) <= 0; // no stock entry (e.g. static mode) → buyable
 
   return (
     <SiteLayout active="catalog">
@@ -117,8 +118,10 @@ function ProductPage() {
             <button
               type="button"
               className="btn"
-              style={{ width: "100%", padding: 15 }}
+              style={{ width: "100%", padding: 15, opacity: soldOut ? 0.55 : 1 }}
+              disabled={soldOut}
               onClick={() => {
+                if (soldOut) return;
                 addLine({
                   slug: p.slug,
                   name: p.name,
@@ -129,7 +132,9 @@ function ProductPage() {
                 setAdded(true);
               }}
             >
-              {added ? (
+              {soldOut ? (
+                "Sold out"
+              ) : added ? (
                 "Added to cart ✓"
               ) : (
                 <span className="cartline">

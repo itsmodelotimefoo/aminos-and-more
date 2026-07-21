@@ -780,6 +780,19 @@ async function viewRestock() {
   try { inv = cache.inventory = await api.inventory(); orders = cache.orders = await api.orders(); }
   catch (e) { return renderError(e, 'restock'); }
   const committed = committedUnits(orders);
+  // per-size sold-outs / lows (null-safe; empty when the size_stock table is absent)
+  const sizeRows = await loadSizeStock();
+  const cat = await loadCatalog();
+  const slugName = {};
+  (cat || []).forEach((p) => { slugName[p.slug] = p.name; });
+  const sizeNeed = (sizeRows || [])
+    .map((r) => {
+      const onHand = r.on_hand || 0;
+      return { slug: r.slug, size: r.size, name: slugName[r.slug] || r.slug, onHand,
+        state: onHand <= 0 ? 'out' : onHand <= REORDER_POINT ? 'low' : 'ok' };
+    })
+    .filter((s) => s.state !== 'ok')
+    .sort((a, b) => ({ out: 0, low: 1 }[a.state] - { out: 0, low: 1 }[b.state]) || a.onHand - b.onHand);
   const rows = inv.map((i) => {
     const onHand = i.on_hand || 0;
     const com = committed[i.sku] || 0;
@@ -816,6 +829,23 @@ async function viewRestock() {
       </form>
     </div>`).join('');
   html += `</div>`;
+
+  // per-size restock — sold-out and low tracked sizes, receive straight to size_stock
+  if (sizeNeed.length) {
+    html += `<div class="section-title">Sizes to restock <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${sizeNeed.length}</span></div>`;
+    html += `<div class="card" style="padding:8px 16px">`;
+    html += sizeNeed.map((s) => `<div class="rk">
+      <div class="rk-top"><div><span class="rk-nm">${esc(s.name)}</span> <span class="rk-sku">${esc(s.size)}</span></div>
+        <span class="rk-buy ${s.state}">${s.state === 'out' ? 'Sold out' : 'Low'}</span></div>
+      <div class="rk-meta"><span class="rk-av ${s.state}">On-hand <b>${s.onHand}</b></span><span>${esc(s.slug)}</span></div>
+      <form class="rk-receive" data-action="size-receive" data-slug="${esc(s.slug)}" data-size="${esc(s.size)}" data-cur="${s.onHand}">
+        <input class="input" name="qty" type="number" inputmode="numeric" min="1" placeholder="Receive qty" autocomplete="off" />
+        <button class="btn sm" type="submit">Receive</button>
+      </form>
+    </div>`).join('');
+    html += `</div>`;
+  }
+
   html += `</div>` + bottomNav('inventory');
   root.innerHTML = html;
 }
@@ -1469,6 +1499,20 @@ document.addEventListener('submit', async (e) => {
       toast(rec.dataset.sku + ' received → ' + next);
       viewRestock();
     } catch (err) { btn.disabled = false; btn.textContent = 'Receive'; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+    return;
+  }
+  const szRec = e.target.closest('[data-action="size-receive"]');
+  if (szRec) {
+    e.preventDefault();
+    const qty = Math.max(0, parseInt(new FormData(szRec).get('qty'), 10) || 0);
+    if (!qty) { toast('Enter a quantity'); return; }
+    const btn = szRec.querySelector('button[type=submit]'); btn.textContent = '…'; btn.disabled = true;
+    try {
+      const next = await api.adjustSizeStock(szRec.dataset.slug, szRec.dataset.size, Number(szRec.dataset.cur), qty);
+      cache.sizeStock = undefined;
+      toast(szRec.dataset.size + ' received → ' + next);
+      viewRestock();
+    } catch (err) { btn.disabled = false; btn.textContent = 'Receive'; toast(err.status === 401 ? 'Session expired' : err.status === 400 || err.status === 404 ? 'Run size_stock migration' : 'Update failed'); }
     return;
   }
   const shipQ = e.target.closest('[data-action="ship-queue"]');

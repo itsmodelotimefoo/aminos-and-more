@@ -68,6 +68,21 @@ create table if not exists inventory (
   updated_at timestamptz not null default now()
 );
 
+-- ---------- per-size availability (optional, drives storefront gating) -------
+-- Finer-grained than `inventory`: lets a single size sell out while the rest of
+-- the product keeps selling. The storefront reads this (slug,size,on_hand) when
+-- SIZE_STOCK=1; a size with NO row here is untracked and sells freely, so this
+-- table is purely additive — absent rows change nothing. `size` must match the
+-- product's size label exactly (e.g. '5 mg'). Edited from the Hub → Stock by size.
+create table if not exists size_stock (
+  slug       text not null,
+  size       text not null,
+  on_hand    integer not null default 0,
+  updated_at timestamptz not null default now(),
+  primary key (slug, size)
+);
+create index if not exists size_stock_slug_idx on size_stock (slug);
+
 -- ---------- orders (mirrors the storefront order + brand attribution) --------
 create table if not exists orders (
   id                 text primary key,            -- 'AM-1A2B3C4D' / 'WL-...'
@@ -167,6 +182,7 @@ $$ language sql stable security definer;
 alter table orders         enable row level security;
 alter table order_items    enable row level security;
 alter table inventory      enable row level security;
+alter table size_stock     enable row level security;
 alter table stores         enable row level security;
 alter table products       enable row level security;
 alter table store_products enable row level security;
@@ -177,7 +193,7 @@ alter table staff          enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['orders','order_items','inventory','stores','products','store_products','lots','tasks'] loop
+  foreach t in array array['orders','order_items','inventory','size_stock','stores','products','store_products','lots','tasks'] loop
     execute format('drop policy if exists staff_all on %I;', t);
     execute format(
       'create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff());', t);

@@ -97,7 +97,15 @@ const demo = (() => {
     { sku: 'GLOW', slug: 'glow', name: 'GLOW', cls: 'Blend', kind: 'blend', active: true, sizes: [['70 mg', 17000]] },
     { sku: 'KLOW', slug: 'klow', name: 'KLOW', cls: 'Blend', kind: 'blend', active: true, sizes: [['80 mg', 18000]] },
   ];
-  return { stores, orders, inventory, lots, tasks, catalog };
+  // per-size availability — only sizes with a row are "gated"; the rest sell
+  // freely (mirrors the storefront: a missing size row = buyable).
+  const sizeStock = [
+    { slug: 'bpc-157', size: '5 mg', on_hand: 3 },    // low
+    { slug: 'bpc-157', size: '10 mg', on_hand: 0 },   // sold out
+    { slug: 'ghk-cu', size: '100 mg', on_hand: 24 },
+    { slug: 'tb-500', size: '2 mg', on_hand: 0 },     // sold out
+  ];
+  return { stores, orders, inventory, lots, tasks, catalog, sizeStock };
 })();
 
 /* ---------- backend: Supabase REST --------------------------------- */
@@ -194,6 +202,34 @@ const api = {
     });
     return next;
   },
+  // ----- per-size stock (drives the storefront's per-size gating) -----
+  async sizeStock() {
+    if (!LIVE) return demo.sizeStock;
+    return sb('/size_stock?select=slug,size,on_hand');
+  },
+  async setSizeStock(slug, size, on_hand) {
+    const n = Math.max(0, on_hand | 0);
+    if (!LIVE) {
+      const i = demo.sizeStock.findIndex((r) => r.slug === slug && r.size === size);
+      if (i >= 0) demo.sizeStock[i].on_hand = n; else demo.sizeStock.push({ slug, size, on_hand: n });
+      return n;
+    }
+    // upsert on the (slug,size) primary key
+    await sb('/size_stock?on_conflict=slug,size', {
+      method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ slug, size, on_hand: n, updated_at: new Date().toISOString() }),
+    });
+    return n;
+  },
+  async adjustSizeStock(slug, size, current, delta) {
+    return this.setSizeStock(slug, size, Math.max(0, (current || 0) + delta));
+  },
+  async untrackSizeStock(slug, size) {
+    if (!LIVE) { demo.sizeStock = demo.sizeStock.filter((r) => !(r.slug === slug && r.size === size)); return; }
+    await sb('/size_stock?slug=eq.' + encodeURIComponent(slug) + '&size=eq.' + encodeURIComponent(size), {
+      method: 'DELETE', headers: { Prefer: 'return=minimal' },
+    });
+  },
 };
 
 /* ---------- auth ---------------------------------------------------- */
@@ -244,7 +280,7 @@ function orderRow(o) {
 }
 
 /* ---------- views --------------------------------------------------- */
-let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined, catalog: undefined };
+let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined, catalog: undefined, sizeStock: undefined };
 
 /* ---------- Home / command dashboard -------------------------------- */
 async function viewHome() {
@@ -292,6 +328,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="payments"><span class="ico">₿</span> Payments</button>
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
+    <button class="linkbtn" data-action="nav" data-to="sizes"><span class="ico">📐</span> Stock by size</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
     <button class="linkbtn" data-action="nav" data-to="lab"><span class="ico">🧪</span> Lab · COAs</button>
     <button class="linkbtn" data-action="nav" data-to="tasks"><span class="ico">✓</span> Tasks</button>
@@ -1018,8 +1055,8 @@ async function viewInventory() {
   let inv;
   try { inv = cache.inventory = await api.inventory(); } catch (e) { return renderError(e, 'inventory'); }
   let html = topbar('Inventory', 'Shared across brands', { right: `<button class="icon-btn" data-action="nav" data-to="restock" aria-label="Restock" title="Restock">⟳</button>` });
-  html += `<div class="view"><button class="btn" data-action="nav" data-to="restock" style="margin-bottom:12px">📦 Restock list · what to reorder</button>`;
-  html += `<div class="banner">One shared stock pool — every brand draws from the same counts.</div><div class="card" style="padding:6px 16px">`;
+  html += `<div class="view"><div class="link-grid" style="margin-bottom:12px"><button class="linkbtn" data-action="nav" data-to="sizes"><span class="ico">📐</span> Stock by size</button><button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock list</button></div>`;
+  html += `<div class="banner">One shared stock pool — every brand draws from the same counts. For per-size availability on the storefront, use <b>Stock by size</b>.</div><div class="card" style="padding:6px 16px">`;
   html += inv.map((i) => {
     const n = i.on_hand || 0; const cls = n === 0 ? 'out' : n <= 10 ? 'low' : '';
     const nm = i.products?.name || i.sku;
@@ -1029,6 +1066,74 @@ async function viewInventory() {
       <button class="invbtn" data-action="inv" data-sku="${esc(i.sku)}" data-cur="${n}" data-delta="1" aria-label="Increase">+</button></div>`;
   }).join('') || '<div class="hint">No inventory rows.</div>';
   html += `</div></div>` + bottomNav('inventory');
+  root.innerHTML = html;
+}
+
+/* ---------- Per-size stock (drives storefront per-size gating) ------- */
+async function loadSizeStock() {
+  if (cache.sizeStock !== undefined) return cache.sizeStock;
+  try { cache.sizeStock = await api.sizeStock(); }
+  catch (e) { cache.sizeStock = (e.status === 404 || e.status === 400) ? null : []; }
+  return cache.sizeStock;
+}
+function sizeStockMap(rows) {
+  const m = {};
+  (rows || []).forEach((r) => { (m[r.slug] || (m[r.slug] = {}))[r.size] = r.on_hand; });
+  return m;
+}
+function sizeRowHtml(slug, label, dollars, tracked, n) {
+  const priceStr = dollars != null && dollars !== '' ? '$' + Math.round(dollars / 100) : '';
+  const head = `<div class="in"><div class="nm">${esc(label)}</div><div class="sk">${esc(priceStr)}</div></div>`;
+  if (!tracked) {
+    return `<div class="inv"><span class="szdot" data-slug="${esc(slug)}" data-size="${esc(label)}"></span>${head}
+      <span class="szuntr">not gated</span>
+      <button class="btn sm ghost szstart" data-action="size-track" data-slug="${esc(slug)}" data-size="${esc(label)}">Track</button></div>`;
+  }
+  const cls = n === 0 ? 'out' : n <= 10 ? 'low' : '';
+  return `<div class="inv"><span class="szdot ${cls || 'ok'}"></span>${head}
+    <button class="invbtn" data-action="size-inv" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" data-delta="-1" aria-label="Decrease">−</button>
+    <input class="szct ${cls}" type="number" min="0" inputmode="numeric" value="${n}" data-action="size-set" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" aria-label="On hand for ${esc(label)}" />
+    <button class="invbtn" data-action="size-inv" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" data-delta="1" aria-label="Increase">+</button>
+    <button class="invbtn szx" data-action="size-untrack" data-slug="${esc(slug)}" data-size="${esc(label)}" aria-label="Stop tracking" title="Stop tracking this size">✕</button></div>`;
+}
+async function viewSizes() {
+  const root = $('#app');
+  root.innerHTML = topbar('Stock by size', 'Per-size availability') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
+  const cat = await loadCatalog();
+  const rows = await loadSizeStock();
+  let html = topbar('Stock by size', 'Per-size availability', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  if (rows === null) {
+    html += `<div class="card"><div class="empty"><div class="big">▦</div><h3>Enable per-size stock</h3><p>Run the <b>size_stock</b> table migration in Supabase (db/schema.sql), then set <b>SIZE_STOCK=1</b> on the storefront.</p></div></div></div>` + bottomNav('inventory');
+    root.innerHTML = html; return;
+  }
+  if (cat === null || !cat) {
+    html += `<div class="card"><div class="empty"><div class="big">🛍️</div><h3>Add products first</h3><p>Per-size stock reads its sizes from the catalog.</p></div></div></div>` + bottomNav('inventory');
+    root.innerHTML = html; return;
+  }
+  const map = sizeStockMap(rows);
+  const products = cat.filter((p) => p.active !== false && (p.sizes || []).length);
+  let tracked = 0, soldOut = 0, low = 0;
+  products.forEach((p) => (p.sizes || []).forEach(([label]) => {
+    const n = map[p.slug]?.[label];
+    if (n != null) { tracked++; if (n === 0) soldOut++; else if (n <= 10) low++; }
+  }));
+  html += `<div class="banner">Track stock <b>per size</b>. A tracked size hits <b>Sold out</b> at 0 and shows a low-stock nudge at ≤10 on the storefront. Sizes left <b>untracked</b> sell freely. ${LIVE ? '' : '<b>Demo</b> — connect Supabase to save.'}</div>`;
+  html += `<div class="stats">
+    <div class="stat"><div class="n">${tracked}</div><div class="l">Tracked sizes</div></div>
+    <div class="stat ${soldOut ? 'amber' : 'green'}"><div class="n">${soldOut}</div><div class="l">Sold out</div></div>
+    <div class="stat ${low ? 'amber' : ''}"><div class="n">${low}</div><div class="l">Low (≤10)</div></div>
+  </div>`;
+  html += products.map((p) => {
+    const szMap = map[p.slug] || {};
+    const rowsHtml = (p.sizes || []).map(([label, cents]) => {
+      const has = Object.prototype.hasOwnProperty.call(szMap, label);
+      return sizeRowHtml(p.slug, label, cents, has, has ? szMap[label] : 0);
+    }).join('');
+    return `<div class="section-title" style="margin-top:16px">${esc(p.name)}${p.kind && p.kind !== 'peptide' ? ` <span class="tag">${esc(p.kind)}</span>` : ''} <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${esc(p.slug)}</span></div>
+      <div class="card" style="padding:6px 16px">${rowsHtml}</div>`;
+  }).join('') || `<div class="hint" style="text-align:center;padding:14px 0">No active products with sizes.</div>`;
+  html += `</div>` + bottomNav('inventory');
   root.innerHTML = html;
 }
 
@@ -1090,6 +1195,7 @@ async function render() {
   if (seg === 'payments') return viewPayments();
   if (seg === 'tasks') return viewTasks();
   if (seg === 'catalog') return viewCatalog();
+  if (seg === 'sizes') return viewSizes();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -1169,6 +1275,36 @@ document.addEventListener('click', async (e) => {
         cache.inventory = null;
         toast(el.dataset.sku + ' → ' + next);
         viewInventory();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+      break;
+    }
+    case 'size-inv': {
+      const btn = el; btn.disabled = true;
+      try {
+        const next = await api.adjustSizeStock(el.dataset.slug, el.dataset.size, Number(el.dataset.cur), Number(el.dataset.delta));
+        cache.sizeStock = undefined;
+        toast(el.dataset.slug + ' ' + el.dataset.size + ' → ' + next);
+        viewSizes();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : err.status === 400 || err.status === 404 ? 'Run size_stock migration' : 'Update failed'); }
+      break;
+    }
+    case 'size-track': {
+      const btn = el; btn.disabled = true;
+      try {
+        await api.setSizeStock(el.dataset.slug, el.dataset.size, 0);
+        cache.sizeStock = undefined;
+        toast(el.dataset.size + ' now tracked — sold out until you raise it');
+        viewSizes();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : err.status === 400 || err.status === 404 ? 'Run size_stock migration' : 'Update failed'); }
+      break;
+    }
+    case 'size-untrack': {
+      const btn = el; btn.disabled = true;
+      try {
+        await api.untrackSizeStock(el.dataset.slug, el.dataset.size);
+        cache.sizeStock = undefined;
+        toast(el.dataset.size + ' untracked — sells freely');
+        viewSizes();
       } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
       break;
     }
@@ -1371,6 +1507,25 @@ document.addEventListener('input', (e) => {
       if (inp) { inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
     }, 160);
   }
+});
+
+/* commit per-size stock when the inline number input changes (blur / Enter) */
+document.addEventListener('change', async (e) => {
+  const box = e.target.closest('input[data-action="size-set"]');
+  if (!box) return;
+  const next = Math.max(0, parseInt(box.value, 10) || 0);
+  if (next === Number(box.dataset.cur)) return; // unchanged
+  box.disabled = true;
+  try {
+    await api.setSizeStock(box.dataset.slug, box.dataset.size, next);
+    cache.sizeStock = undefined;
+    toast(box.dataset.size + ' → ' + next);
+    viewSizes();
+  } catch (err) { box.disabled = false; toast(err.status === 401 ? 'Session expired' : err.status === 400 || err.status === 404 ? 'Run size_stock migration' : 'Update failed'); }
+});
+/* Enter in the number input commits without waiting for blur */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.closest('input[data-action="size-set"]')) { e.preventDefault(); e.target.blur(); }
 });
 
 /* ---------- CSV export --------------------------------------------- */

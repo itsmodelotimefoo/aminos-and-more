@@ -293,6 +293,9 @@ async function viewHome() {
   let orders, inv;
   try { orders = cache.orders = await api.orders(); inv = cache.inventory = await api.inventory(); }
   catch (e) { return renderError(e, 'home'); }
+  // per-size sold-outs — loadSizeStock never throws (null if the table is absent)
+  const sizeRows = await loadSizeStock();
+  const soldOutSizes = (sizeRows || []).filter((r) => (r.on_hand || 0) === 0).length;
 
   const startDay = new Date(); startDay.setHours(0, 0, 0, 0);
   const todays = orders.filter((o) => Date.parse(o.created_at) >= startDay.getTime());
@@ -316,6 +319,7 @@ async function viewHome() {
   if (toShip) cards.push(`<button class="att" data-action="nav" data-to="ship"><span class="att-n">${toShip}</span><span class="att-l">order${toShip === 1 ? '' : 's'} ready to ship</span><span class="att-go">›</span></button>`);
   if (pending) cards.push(`<button class="att" data-action="nav" data-to="orders"><span class="att-n">${pending}</span><span class="att-l">payment${pending === 1 ? '' : 's'} pending</span><span class="att-go">›</span></button>`);
   if (out) cards.push(`<button class="att warn" data-action="nav" data-to="inventory"><span class="att-n">${out}</span><span class="att-l">SKU${out === 1 ? '' : 's'} out of stock</span><span class="att-go">›</span></button>`);
+  if (soldOutSizes) cards.push(`<button class="att warn" data-action="nav" data-to="sizes"><span class="att-n">${soldOutSizes}</span><span class="att-l">size${soldOutSizes === 1 ? '' : 's'} sold out</span><span class="att-go">›</span></button>`);
   if (low) cards.push(`<button class="att" data-action="nav" data-to="inventory"><span class="att-n">${low}</span><span class="att-l">SKU${low === 1 ? '' : 's'} low on stock</span><span class="att-go">›</span></button>`);
   html += `<div class="section-title">Needs attention</div>`;
   html += cards.length ? `<div class="atts">${cards.join('')}</div>` : `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">✅</div><h3>All caught up</h3><p>Nothing needs action right now.</p></div></div>`;

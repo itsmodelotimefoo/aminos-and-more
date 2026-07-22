@@ -22,12 +22,20 @@ too (both read the same `notified` flag).
 supabase secrets set \
   RESEND_API_KEY="re_xxxxxxxx" \
   NOTIFY_FROM="Aminos & More <noreply@aminosandmore.com>" \
+  NOTIFY_FROM_AMINOS="Aminos & More <noreply@aminosandmore.com>" \
+  NOTIFY_FROM_GETWLL="getWLL <noreply@getwll.com>" \
   NOTIFY_CRON_SECRET="$(openssl rand -hex 16)"
 ```
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically — don't
 set them. Leave `RESEND_API_KEY` unset to **dry-run**: the function reports who
 it *would* email (`wouldSend`) and flips nothing, so you can watch it first.
+
+**Per-brand From.** Each signup is emailed from `NOTIFY_FROM_<SLUG>` — the
+`store_slug` upper-cased with non-alphanumerics turned to `_` (so `aminos` →
+`NOTIFY_FROM_AMINOS`, `getwll` → `NOTIFY_FROM_GETWLL`). If a brand's var isn't
+set it falls back to `NOTIFY_FROM`. Verify **each** sending domain in Resend
+(`aminosandmore.com`, `getwll.com`) before using its own `From`.
 
 ## 2. Deploy
 
@@ -86,9 +94,6 @@ Response shape:
 
 ## Notes
 
-- **Per-brand From.** One `NOTIFY_FROM` is used for every brand. To send
-  getWLL's waiters from a getWLL address, branch on the signup's `store_slug`
-  (it's already queried) and pick a `From` per store.
 - **Product link.** The email links to `https://{store.domain}/products/{slug}`
   using the `stores.domain` column, so each brand's email points at its own site.
 - **Volume.** Sends one email per matching signup, sequentially — fine for this

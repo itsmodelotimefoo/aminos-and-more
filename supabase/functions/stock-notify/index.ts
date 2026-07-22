@@ -25,6 +25,16 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const NOTIFY_FROM = Deno.env.get("NOTIFY_FROM") ?? "Aminos & More <onboarding@resend.dev>";
 const CRON_SECRET = Deno.env.get("NOTIFY_CRON_SECRET") ?? "";
 
+// Per-brand From address. A signup's `store_slug` selects the sender via
+// NOTIFY_FROM_<SLUG> (slug upper-cased, non-alphanumerics → underscore), e.g.
+// store_slug "getwll" → NOTIFY_FROM_GETWLL, "aminos" → NOTIFY_FROM_AMINOS.
+// Falls back to NOTIFY_FROM when the brand-specific var isn't set, so each
+// brand's waiters are emailed from its own address once you set it.
+function fromFor(storeSlug: string): string {
+  const key = "NOTIFY_FROM_" + storeSlug.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  return Deno.env.get(key) || NOTIFY_FROM;
+}
+
 type Json = Record<string, unknown>;
 
 function rest(path: string, init: RequestInit = {}): Promise<Response> {
@@ -130,7 +140,7 @@ Deno.serve(async (req: Request) => {
           String(w.email),
           `Back in stock: ${product} ${size}`,
           emailHtml(product, size, store.name, url),
-          NOTIFY_FROM,
+          fromFor(String(w.store_slug ?? "")),
         );
         if (ok) sentIds.push(w.id as number);
         else failed.push({ id: w.id, reason: "resend send failed" });

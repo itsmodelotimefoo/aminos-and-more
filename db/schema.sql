@@ -83,6 +83,23 @@ create table if not exists size_stock (
 );
 create index if not exists size_stock_slug_idx on size_stock (slug);
 
+-- ---------- back-in-stock signups -------------------------------------------
+-- When a size is sold out, the storefront lets a customer leave their email;
+-- rows land here (written with the service-role key, so RLS below only gates
+-- the Hub's reads). Upsert target is (slug,size,email) so repeat signups are
+-- idempotent; flip `notified` true after you email them.
+create table if not exists stock_notify (
+  id         bigint generated always as identity primary key,
+  slug       text not null,
+  size       text not null,
+  email      text not null,
+  store_slug text,
+  notified   boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (slug, size, email)
+);
+create index if not exists stock_notify_open_idx on stock_notify (notified, slug, size);
+
 -- ---------- orders (mirrors the storefront order + brand attribution) --------
 create table if not exists orders (
   id                 text primary key,            -- 'AM-1A2B3C4D' / 'WL-...'
@@ -183,6 +200,7 @@ alter table orders         enable row level security;
 alter table order_items    enable row level security;
 alter table inventory      enable row level security;
 alter table size_stock     enable row level security;
+alter table stock_notify   enable row level security;
 alter table stores         enable row level security;
 alter table products       enable row level security;
 alter table store_products enable row level security;
@@ -193,7 +211,7 @@ alter table staff          enable row level security;
 do $$
 declare t text;
 begin
-  foreach t in array array['orders','order_items','inventory','size_stock','stores','products','store_products','lots','tasks'] loop
+  foreach t in array array['orders','order_items','inventory','size_stock','stock_notify','stores','products','store_products','lots','tasks'] loop
     execute format('drop policy if exists staff_all on %I;', t);
     execute format(
       'create policy staff_all on %I for all to authenticated using (is_staff()) with check (is_staff());', t);

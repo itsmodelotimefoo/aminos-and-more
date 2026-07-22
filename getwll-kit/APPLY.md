@@ -86,6 +86,53 @@ getWLL prices/packaging differ from aminos, so its catalog reads the shared
 
 ---
 
+## Phase 3 — per-size stock gating + back-in-stock notify  ✅ ready
+
+Gates each **size** on the storefront (sold out at 0, low nudge ≤10) and lets a
+customer sign up to be emailed when a sold-out size returns. `size_stock` is
+brand-agnostic (shared inventory), and the Hub + auto-notify emails are already
+multi-brand — so getWLL only wires the storefront read + the signup write.
+
+### 1. Files are in this kit (already updated)
+- `app/src/lib/catalog.server.ts` — now also exports `getStock()` + `getSizeStock()`.
+- `app/src/lib/api/catalog.functions.ts` — now also exports `loadStock` + `loadSizeStock`.
+- `app/src/lib/notify.server.ts`  ← new (reads `process.env`, tags `store_slug=getwll`).
+- `app/src/lib/api/notify.functions.ts`  ← new (`requestBackInStock` server fn; needs `zod`).
+
+Re-copy the two catalog files (they gained exports) and drop in the two notify files.
+
+### 2. Wire the PDP — `app/src/routes/products.$slug.tsx`
+Mirror the aminos PDP on the **`headless-catalog`** branch (copy its body — it's a
+re-skin so it matches). The moving parts:
+```ts
+import { loadCatalog, loadStock, loadSizeStock } from "../lib/api/catalog.functions";
+import { requestBackInStock } from "../lib/api/notify.functions";
+// loader:
+loader: async () => ({ products: await loadCatalog(), stock: await loadStock(), sizeStock: await loadSizeStock() }),
+```
+Then, in the component (verbatim from aminos):
+- `availFor(label)` = per-size level (`sizeStock[slug]`) or product-level `stock[slug]`;
+- disable Add-to-cart when the selected size is sold out; show the low-stock line ≤10;
+- a `useEffect` that auto-selects the first in-stock size;
+- the `NotifyForm` shown when the selected size is sold out (POSTs `requestBackInStock`).
+
+### 3. Env in Netlify
+```
+SIZE_STOCK=1          # turns on per-size gating (needs CATALOG_FROM_DB=1 from Phase 2)
+```
+(Supabase creds + `STORE_SLUG=getwll` are already set from Phase 1.) Unset
+`SIZE_STOCK` to instantly revert to product-level behavior.
+
+### 4. Shared backend — nothing to build
+Already live for both brands (in the aminos repo, `ops-hub`): the `size_stock` +
+`stock_notify` tables, the Hub's **Stock by size** / **Waitlist** / dashboard
+cards, and the **stock-notify edge function** that emails getWLL waiters from
+`NOTIFY_FROM_GETWLL` and links to `getwll.com`. Just make sure the shared setup
+ran once (schema + the `NOTIFY_FROM_GETWLL` secret + `getwll.com` verified in
+Resend — see `supabase/functions/stock-notify/README.md`).
+
+---
+
 ## Only difference from the aminos changes
 Runtime env: these files use `process.env` (Netlify). The aminos copies use
 `import { env } from "cloudflare:workers"`. Everything else is identical.

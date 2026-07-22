@@ -73,3 +73,69 @@ export async function getCatalog(): Promise<Product[]> {
 export async function getCatalogProduct(slug: string): Promise<Product | undefined> {
   return (await getCatalog()).find((p) => p.slug === slug);
 }
+
+// Small per-isolate caches so we don't hit Supabase on every render.
+let _stock: { at: number; data: Record<string, number> } | null = null;
+let _sizeStock: { at: number; data: Record<string, Record<string, number>> } | null = null;
+
+// Shared-inventory availability by product slug, for out-of-stock gating. Flag
+// off or any error → {} (no gating: the store behaves exactly as before).
+// Brand-agnostic — inventory is one shared pool across brands.
+type InvEmbed = { slug?: string; inventory?: { on_hand?: number } | { on_hand?: number }[] | null };
+export async function getStock(): Promise<Record<string, number>> {
+  const c = cfg();
+  if (!c) return {};
+  const ttl = Number(process.env.CATALOG_TTL_MS) || 60_000;
+  const now = Date.now();
+  if (_stock && now - _stock.at < ttl) return _stock.data;
+  try {
+    const res = await fetch(
+      `${c.url}/rest/v1/products?select=slug,inventory(on_hand)&active=eq.true`,
+      { headers: headers(c.key) },
+    );
+    if (!res.ok) return _stock?.data ?? {};
+    const rows = (await res.json()) as InvEmbed[];
+    const map: Record<string, number> = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug) continue;
+        const inv = Array.isArray(r.inventory) ? r.inventory[0] : r.inventory;
+        if (inv && typeof inv.on_hand === "number") map[r.slug] = inv.on_hand;
+      }
+    }
+    _stock = { at: now, data: map };
+    return map;
+  } catch {
+    return _stock?.data ?? {};
+  }
+}
+
+// Per-size availability { slug: { "5 mg": 12 } }. Opt-in via SIZE_STOCK=1 (needs
+// the `size_stock` table). Off / error / no table → {}, and the store falls back
+// to product-level stock — exactly today's behavior. Brand-agnostic (shared).
+type SizeRow = { slug?: string; size?: string; on_hand?: number };
+export async function getSizeStock(): Promise<Record<string, Record<string, number>>> {
+  const c = cfg();
+  if (!c || process.env.SIZE_STOCK !== "1") return {};
+  const ttl = Number(process.env.CATALOG_TTL_MS) || 60_000;
+  const now = Date.now();
+  if (_sizeStock && now - _sizeStock.at < ttl) return _sizeStock.data;
+  try {
+    const res = await fetch(`${c.url}/rest/v1/size_stock?select=slug,size,on_hand`, {
+      headers: headers(c.key),
+    });
+    if (!res.ok) return _sizeStock?.data ?? {};
+    const rows = (await res.json()) as SizeRow[];
+    const map: Record<string, Record<string, number>> = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows) {
+        if (!r.slug || !r.size) continue;
+        (map[r.slug] ||= {})[r.size] = typeof r.on_hand === "number" ? r.on_hand : 0;
+      }
+    }
+    _sizeStock = { at: now, data: map };
+    return map;
+  } catch {
+    return _sizeStock?.data ?? {};
+  }
+}

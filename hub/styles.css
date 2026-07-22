@@ -241,6 +241,14 @@ a{color:inherit;text-decoration:none}
 .szx{color:var(--faint);font-size:14px}
 .szuntr{flex:1;text-align:right;color:var(--faint);font-size:12.5px;font-style:italic}
 .szstart{flex-shrink:0;white-space:nowrap}
+.szwait{flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:3px 9px;white-space:nowrap}
+
+/* waitlist */
+.wl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0 10px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.wl-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.wl-row:last-child{border-bottom:none}
+.wl-email{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl-ago{color:var(--faint);font-size:12px;white-space:nowrap}
 
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--safe-bottom) + 20px);z-index:80;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:650;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}

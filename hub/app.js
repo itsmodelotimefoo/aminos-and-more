@@ -105,7 +105,14 @@ const demo = (() => {
     { slug: 'ghk-cu', size: '100 mg', on_hand: 24 },
     { slug: 'tb-500', size: '2 mg', on_hand: 0 },     // sold out
   ];
-  return { stores, orders, inventory, lots, tasks, catalog, sizeStock };
+  // back-in-stock signups (open = not yet notified) for sold-out sizes
+  const waitlist = [
+    { id: 1, slug: 'bpc-157', size: '10 mg', email: 'aria@example.com', store_slug: 'aminos', notified: false, created_at: new Date(now - 40 * 60000).toISOString() },
+    { id: 2, slug: 'bpc-157', size: '10 mg', email: 'devon@example.com', store_slug: 'getwll', notified: false, created_at: new Date(now - 3 * 3600000).toISOString() },
+    { id: 3, slug: 'bpc-157', size: '10 mg', email: 'moss@example.com', store_slug: 'aminos', notified: false, created_at: new Date(now - 20 * 3600000).toISOString() },
+    { id: 4, slug: 'tb-500', size: '2 mg', email: 'kai@example.com', store_slug: 'aminos', notified: false, created_at: new Date(now - 26 * 3600000).toISOString() },
+  ];
+  return { stores, orders, inventory, lots, tasks, catalog, sizeStock, waitlist };
 })();
 
 /* ---------- backend: Supabase REST --------------------------------- */
@@ -230,6 +237,21 @@ const api = {
       method: 'DELETE', headers: { Prefer: 'return=minimal' },
     });
   },
+  // ----- back-in-stock waitlist (stock_notify) -----
+  async waitlist() {
+    if (!LIVE) return demo.waitlist.filter((w) => !w.notified);
+    return sb('/stock_notify?select=id,slug,size,email,store_slug,created_at&notified=eq.false&order=created_at.asc');
+  },
+  async markSizeNotified(slug, size) {
+    if (!LIVE) { demo.waitlist.forEach((w) => { if (w.slug === slug && w.size === size) w.notified = true; }); return; }
+    await sb('/stock_notify?slug=eq.' + encodeURIComponent(slug) + '&size=eq.' + encodeURIComponent(size) + '&notified=eq.false', {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ notified: true }),
+    });
+  },
+  async removeWaiter(id) {
+    if (!LIVE) { demo.waitlist = demo.waitlist.filter((w) => String(w.id) !== String(id)); return; }
+    await sb('/stock_notify?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+  },
 };
 
 /* ---------- auth ---------------------------------------------------- */
@@ -280,7 +302,7 @@ function orderRow(o) {
 }
 
 /* ---------- views --------------------------------------------------- */
-let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined, catalog: undefined, sizeStock: undefined };
+let cache = { orders: null, inventory: null, lots: undefined, tasks: undefined, catalog: undefined, sizeStock: undefined, waitlist: undefined };
 
 /* ---------- Home / command dashboard -------------------------------- */
 async function viewHome() {
@@ -297,6 +319,7 @@ async function viewHome() {
   const sizeRows = await loadSizeStock();
   const soldOutSizes = (sizeRows || []).filter((r) => (r.on_hand || 0) === 0).length;
   const lowSizes = (sizeRows || []).filter((r) => (r.on_hand || 0) > 0 && (r.on_hand || 0) <= 10).length;
+  const waiting = (await loadWaitlist() || []).length; // open back-in-stock signups
 
   const startDay = new Date(); startDay.setHours(0, 0, 0, 0);
   const todays = orders.filter((o) => Date.parse(o.created_at) >= startDay.getTime());
@@ -323,6 +346,7 @@ async function viewHome() {
   if (soldOutSizes) cards.push(`<button class="att warn" data-action="nav" data-to="sizes"><span class="att-n">${soldOutSizes}</span><span class="att-l">size${soldOutSizes === 1 ? '' : 's'} sold out</span><span class="att-go">›</span></button>`);
   if (low) cards.push(`<button class="att" data-action="nav" data-to="inventory"><span class="att-n">${low}</span><span class="att-l">SKU${low === 1 ? '' : 's'} low on stock</span><span class="att-go">›</span></button>`);
   if (lowSizes) cards.push(`<button class="att" data-action="nav" data-to="sizes"><span class="att-n">${lowSizes}</span><span class="att-l">size${lowSizes === 1 ? '' : 's'} low on stock</span><span class="att-go">›</span></button>`);
+  if (waiting) cards.push(`<button class="att" data-action="nav" data-to="waitlist"><span class="att-n">${waiting}</span><span class="att-l">waiting on a restock</span><span class="att-go">›</span></button>`);
   html += `<div class="section-title">Needs attention</div>`;
   html += cards.length ? `<div class="atts">${cards.join('')}</div>` : `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">✅</div><h3>All caught up</h3><p>Nothing needs action right now.</p></div></div>`;
 
@@ -335,6 +359,7 @@ async function viewHome() {
     <button class="linkbtn" data-action="nav" data-to="customers"><span class="ico">☺</span> Customers</button>
     <button class="linkbtn" data-action="nav" data-to="inventory"><span class="ico">▦</span> Inventory</button>
     <button class="linkbtn" data-action="nav" data-to="sizes"><span class="ico">📐</span> Stock by size</button>
+    <button class="linkbtn" data-action="nav" data-to="waitlist"><span class="ico">👥</span> Waitlist</button>
     <button class="linkbtn" data-action="nav" data-to="restock"><span class="ico">📦</span> Restock</button>
     <button class="linkbtn" data-action="nav" data-to="lab"><span class="ico">🧪</span> Lab · COAs</button>
     <button class="linkbtn" data-action="nav" data-to="tasks"><span class="ico">✓</span> Tasks</button>
@@ -1117,27 +1142,38 @@ function sizeStockMap(rows) {
   (rows || []).forEach((r) => { (m[r.slug] || (m[r.slug] = {}))[r.size] = r.on_hand; });
   return m;
 }
-function sizeRowHtml(slug, label, dollars, tracked, n) {
+function sizeRowHtml(slug, label, dollars, tracked, n, waiting) {
   const priceStr = dollars != null && dollars !== '' ? '$' + Math.round(dollars / 100) : '';
   const head = `<div class="in"><div class="nm">${esc(label)}</div><div class="sk">${esc(priceStr)}</div></div>`;
+  const wait = waiting ? `<button class="szwait" data-action="nav" data-to="waitlist" title="${waiting} waiting to be notified">👥 ${waiting}</button>` : '';
   if (!tracked) {
-    return `<div class="inv"><span class="szdot" data-slug="${esc(slug)}" data-size="${esc(label)}"></span>${head}
+    return `<div class="inv"><span class="szdot" data-slug="${esc(slug)}" data-size="${esc(label)}"></span>${head}${wait}
       <span class="szuntr">not gated</span>
       <button class="btn sm ghost szstart" data-action="size-track" data-slug="${esc(slug)}" data-size="${esc(label)}">Track</button></div>`;
   }
   const cls = n === 0 ? 'out' : n <= 10 ? 'low' : '';
-  return `<div class="inv"><span class="szdot ${cls || 'ok'}"></span>${head}
+  return `<div class="inv"><span class="szdot ${cls || 'ok'}"></span>${head}${wait}
     <button class="invbtn" data-action="size-inv" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" data-delta="-1" aria-label="Decrease">−</button>
     <input class="szct ${cls}" type="number" min="0" inputmode="numeric" value="${n}" data-action="size-set" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" aria-label="On hand for ${esc(label)}" />
     <button class="invbtn" data-action="size-inv" data-slug="${esc(slug)}" data-size="${esc(label)}" data-cur="${n}" data-delta="1" aria-label="Increase">+</button>
     <button class="invbtn szx" data-action="size-untrack" data-slug="${esc(slug)}" data-size="${esc(label)}" aria-label="Stop tracking" title="Stop tracking this size">✕</button></div>`;
+}
+function waitCountMap(rows) {
+  const m = {};
+  (rows || []).forEach((w) => { const k = w.slug + '\n' + w.size; m[k] = (m[k] || 0) + 1; });
+  return m;
 }
 async function viewSizes() {
   const root = $('#app');
   root.innerHTML = topbar('Stock by size', 'Per-size availability') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
   const cat = await loadCatalog();
   const rows = await loadSizeStock();
-  let html = topbar('Stock by size', 'Per-size availability', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  const waitMap = waitCountMap(await loadWaitlist()); // null-safe → {}
+  const anyWait = Object.keys(waitMap).length > 0;
+  let html = topbar('Stock by size', 'Per-size availability', {
+    left: `<button class="back-btn" data-action="back">‹</button>`,
+    right: anyWait ? `<button class="icon-btn" data-action="nav" data-to="waitlist" aria-label="Waitlist" title="Back-in-stock waitlist">👥</button>` : '',
+  });
   html += `<div class="view">`;
   if (rows === null) {
     html += `<div class="card"><div class="empty"><div class="big">▦</div><h3>Enable per-size stock</h3><p>Run the <b>size_stock</b> table migration in Supabase (db/schema.sql), then set <b>SIZE_STOCK=1</b> on the storefront.</p></div></div></div>` + bottomNav('inventory');
@@ -1164,11 +1200,71 @@ async function viewSizes() {
     const szMap = map[p.slug] || {};
     const rowsHtml = (p.sizes || []).map(([label, cents]) => {
       const has = Object.prototype.hasOwnProperty.call(szMap, label);
-      return sizeRowHtml(p.slug, label, cents, has, has ? szMap[label] : 0);
+      return sizeRowHtml(p.slug, label, cents, has, has ? szMap[label] : 0, waitMap[p.slug + '\n' + label] || 0);
     }).join('');
     return `<div class="section-title" style="margin-top:16px">${esc(p.name)}${p.kind && p.kind !== 'peptide' ? ` <span class="tag">${esc(p.kind)}</span>` : ''} <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${esc(p.slug)}</span></div>
       <div class="card" style="padding:6px 16px">${rowsHtml}</div>`;
   }).join('') || `<div class="hint" style="text-align:center;padding:14px 0">No active products with sizes.</div>`;
+  html += `</div>` + bottomNav('inventory');
+  root.innerHTML = html;
+}
+
+/* ---------- Back-in-stock waitlist (stock_notify) ------------------- */
+async function loadWaitlist() {
+  if (cache.waitlist !== undefined) return cache.waitlist;
+  try { cache.waitlist = await api.waitlist(); }
+  catch (e) { cache.waitlist = (e.status === 404 || e.status === 400) ? null : []; }
+  return cache.waitlist;
+}
+async function viewWaitlist() {
+  const root = $('#app');
+  root.innerHTML = topbar('Waitlist', 'Back-in-stock signups') + `<div class="view"><div class="center"><div class="spin"></div></div></div>` + bottomNav('inventory');
+  const waiters = await loadWaitlist();
+  const cat = await loadCatalog();
+  const stockMap = sizeStockMap(await loadSizeStock());
+  let html = topbar('Waitlist', 'Back-in-stock signups', { left: `<button class="back-btn" data-action="back">‹</button>` });
+  html += `<div class="view">`;
+  if (waiters === null) {
+    html += `<div class="card"><div class="empty"><div class="big">👥</div><h3>Enable waitlist</h3><p>Run the <b>stock_notify</b> table migration in Supabase (db/schema.sql). Storefront signups land here.</p></div></div></div>` + bottomNav('inventory');
+    root.innerHTML = html; return;
+  }
+  const slugName = {};
+  (cat || []).forEach((p) => { slugName[p.slug] = p.name; });
+  const groups = {};
+  waiters.forEach((w) => {
+    const k = w.slug + '\n' + w.size;
+    (groups[k] || (groups[k] = { slug: w.slug, size: w.size, list: [] })).list.push(w);
+  });
+  const arr = Object.values(groups).sort((a, b) => b.list.length - a.list.length);
+
+  html += `<div class="banner">Customers who asked to be told when a sold-out size returns. After you restock and email them, tap <b>Mark notified</b> to clear them. ${LIVE ? '' : '<b>Demo</b> — connect Supabase to save.'}</div>`;
+  html += `<div class="stats">
+    <div class="stat"><div class="n">${arr.length}</div><div class="l">Sizes awaited</div></div>
+    <div class="stat ${waiters.length ? 'amber' : 'green'}"><div class="n">${waiters.length}</div><div class="l">People waiting</div></div>
+  </div>`;
+
+  if (!arr.length) {
+    html += `<div class="card"><div class="empty" style="padding:22px 10px"><div class="big">✅</div><h3>No one waiting</h3><p>Back-in-stock signups will show up here.</p></div></div>`;
+    html += `</div>` + bottomNav('inventory');
+    root.innerHTML = html; return;
+  }
+
+  html += arr.map((g) => {
+    const nm = slugName[g.slug] || g.slug;
+    const stock = stockMap[g.slug]?.[g.size];
+    const restocked = stock != null && stock > 0;
+    const emails = g.list.slice().sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at)).map((w) => {
+      const accent = state.storesById[w.store_slug]?.label_profile?.accent || '#5b6cff';
+      return `<div class="wl-row"><span class="b-pip" style="background:${esc(accent)}"></span><span class="wl-email">${esc(w.email)}</span><span class="wl-ago">${timeAgo(w.created_at)}</span>
+        <button class="invbtn szx" data-action="waiter-remove" data-id="${esc(w.id)}" aria-label="Remove" title="Remove this signup">✕</button></div>`;
+    }).join('');
+    return `<div class="section-title" style="margin-top:16px">${esc(nm)} <span style="color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0">${esc(g.size)} · ${g.list.length} waiting</span></div>
+      <div class="card" style="padding:10px 16px">
+        <div class="wl-head"><span class="rk-av ${restocked ? 'ok' : 'out'}">In stock <b>${stock == null ? '—' : stock}</b></span>
+          <button class="btn sm ${restocked ? 'primary' : ''}" data-action="waitlist-notify" data-slug="${esc(g.slug)}" data-size="${esc(g.size)}" data-name="${esc(nm)}">Mark ${g.list.length} notified</button></div>
+        ${emails}
+      </div>`;
+  }).join('');
   html += `</div>` + bottomNav('inventory');
   root.innerHTML = html;
 }
@@ -1232,6 +1328,7 @@ async function render() {
   if (seg === 'tasks') return viewTasks();
   if (seg === 'catalog') return viewCatalog();
   if (seg === 'sizes') return viewSizes();
+  if (seg === 'waitlist') return viewWaitlist();
   if (seg === 'inventory') return viewInventory();
   if (seg === 'settings') return viewSettings();
   return viewHome();
@@ -1341,6 +1438,26 @@ document.addEventListener('click', async (e) => {
         cache.sizeStock = undefined;
         toast(el.dataset.size + ' untracked — sells freely');
         viewSizes();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
+      break;
+    }
+    case 'waitlist-notify': {
+      const btn = el; btn.disabled = true;
+      try {
+        await api.markSizeNotified(el.dataset.slug, el.dataset.size);
+        cache.waitlist = undefined;
+        toast((el.dataset.name || el.dataset.size) + ' ' + el.dataset.size + ' — marked notified');
+        viewWaitlist();
+      } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : err.status === 400 || err.status === 404 ? 'Run stock_notify migration' : 'Update failed'); }
+      break;
+    }
+    case 'waiter-remove': {
+      const btn = el; btn.disabled = true;
+      try {
+        await api.removeWaiter(el.dataset.id);
+        cache.waitlist = undefined;
+        toast('Removed');
+        viewWaitlist();
       } catch (err) { btn.disabled = false; toast(err.status === 401 ? 'Session expired' : 'Update failed'); }
       break;
     }

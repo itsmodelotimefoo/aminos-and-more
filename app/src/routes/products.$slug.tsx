@@ -3,6 +3,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { SiteLayout, ProductCard } from "../components/site/Chrome";
 import { getProduct, LOW_STOCK } from "../lib/products";
 import { loadCatalog, loadStock, loadSizeStock } from "../lib/api/catalog.functions";
+import { requestBackInStock } from "../lib/api/notify.functions";
 import { addLine } from "../lib/cart";
 
 export const Route = createFileRoute("/products/$slug")({
@@ -95,16 +96,15 @@ function ProductPage() {
             <div className="sizes">
               {p.sizes.map(([label, amt], i) => {
                 const sSold = (availFor(label) ?? 1) <= 0;
+                // Sold-out sizes stay selectable so a customer can pick one and
+                // ask to be notified; the Add-to-cart button is what's disabled.
                 return (
                   <button
                     key={label}
                     type="button"
-                    className={`size${i === sizeIdx ? " sel" : ""}`}
-                    disabled={sSold}
-                    aria-disabled={sSold}
-                    style={sSold ? { opacity: 0.4 } : undefined}
+                    className={`size${i === sizeIdx ? " sel" : ""}${sSold ? " soldout" : ""}`}
+                    style={sSold ? { opacity: 0.55 } : undefined}
                     onClick={() => {
-                      if (sSold) return;
                       setSizeIdx(i);
                       setAdded(false);
                     }}
@@ -185,6 +185,10 @@ function ProductPage() {
               </p>
             ) : null}
 
+            {soldOut ? (
+              <NotifyForm key={p.sizes[sizeIdx][0]} slug={p.slug} size={p.sizes[sizeIdx][0]} />
+            ) : null}
+
             <div className="meta">
               <div>
                 <b>Certificate of Analysis</b> · published per lot (HPLC + mass
@@ -212,5 +216,91 @@ function ProductPage() {
         </div>
       </div>
     </SiteLayout>
+  );
+}
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+// Back-in-stock signup for the currently-selected sold-out size. Remounts per
+// size (keyed on the label) so switching sizes gives a fresh form.
+function NotifyForm({ slug, size }: { slug: string; size: string }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "error">("idle");
+
+  if (status === "done") {
+    return (
+      <p
+        style={{
+          margin: "12px 0 0",
+          textAlign: "center",
+          fontSize: 13.5,
+          color: "var(--gold)",
+          fontWeight: 600,
+        }}
+      >
+        ✓ You're on the list — we'll email you the moment {size} is back.
+      </p>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 12 }}>
+      <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "var(--muted)" }}>
+        Out of stock. Get an email the moment {size} is back:
+      </p>
+      <form
+        style={{ display: "flex", gap: 8 }}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!EMAIL_RE.test(email)) {
+            setStatus("error");
+            return;
+          }
+          setStatus("sending");
+          try {
+            const r = await requestBackInStock({ data: { slug, size, email } });
+            setStatus(r.ok ? "done" : "error");
+          } catch {
+            setStatus("error");
+          }
+        }}
+      >
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (status === "error") setStatus("idle");
+          }}
+          placeholder="you@email.com"
+          aria-label={`Email me when ${size} is back in stock`}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: "12px 13px",
+            borderRadius: 8,
+            border: "1px solid var(--line)",
+            background: "var(--bg2)",
+            color: "var(--cream)",
+            fontSize: 14,
+            fontFamily: "inherit",
+          }}
+        />
+        <button
+          type="submit"
+          className="btn ghost"
+          style={{ flex: "0 0 auto", padding: "12px 18px" }}
+          disabled={status === "sending"}
+        >
+          {status === "sending" ? "…" : "Notify me"}
+        </button>
+      </form>
+      {status === "error" ? (
+        <p style={{ margin: "8px 0 0", fontSize: 12.5, color: "var(--crimson)" }}>
+          Enter a valid email and try again.
+        </p>
+      ) : null}
+    </div>
   );
 }

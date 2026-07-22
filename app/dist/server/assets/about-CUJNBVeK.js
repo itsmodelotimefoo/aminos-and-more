@@ -1,6 +1,6 @@
-import { V as jsxRuntimeExports } from "./server-CTuinIJA.js";
-import { L as Link } from "./router-BWuUDbEg.js";
-import { S as SiteLayout } from "./Chrome-C0au5WmZ.js";
+import { V as jsxRuntimeExports } from "./server-Bj_kDYFo.js";
+import { L as Link } from "./router-eXL63y7x.js";
+import { S as SiteLayout } from "./Chrome-Cx_wkHeT.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -10,7 +10,8 @@ import "async_hooks";
 import "stream";
 import "./catalog.server-CvWzbCZn.js";
 import "cloudflare:workers";
-import "./orders.server-DVmQ-msp.js";
+import "./orders.server-CpHfpmGw.js";
+import "./schemas-DZHoLM7f.js";
 function About() {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(SiteLayout, { active: "about", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pagehead wrap", children: [

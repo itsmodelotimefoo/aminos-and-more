@@ -1,5 +1,5 @@
-import { c as createServerRpc } from "./createServerRpc-BBNZ-0QS.js";
-import { a4 as createServerFn } from "./server-CTuinIJA.js";
+import { c as createServerRpc } from "./createServerRpc-DoQ8Diqk.js";
+import { a4 as createServerFn } from "./server-Bj_kDYFo.js";
 import { g as getCatalog, b as getStock, c as getSizeStock } from "./catalog.server-CvWzbCZn.js";
 import "node:async_hooks";
 import "node:stream";

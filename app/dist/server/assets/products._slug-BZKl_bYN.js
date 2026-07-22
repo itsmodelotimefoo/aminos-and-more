@@ -1,7 +1,8 @@
-import { r as reactExports, V as jsxRuntimeExports } from "./server-CTuinIJA.js";
-import { b as Route, L as Link } from "./router-BWuUDbEg.js";
-import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-C0au5WmZ.js";
+import { a4 as createServerFn, r as reactExports, V as jsxRuntimeExports } from "./server-Bj_kDYFo.js";
+import { c as createSsrRpc, b as Route, L as Link } from "./router-eXL63y7x.js";
+import { S as SiteLayout, b as addLine, P as ProductCard } from "./Chrome-Cx_wkHeT.js";
 import { L as LOW_STOCK } from "./catalog.server-CvWzbCZn.js";
+import { o as object, s as string } from "./schemas-DZHoLM7f.js";
 import "node:async_hooks";
 import "node:stream";
 import "node:stream/web";
@@ -10,7 +11,14 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "cloudflare:workers";
-import "./orders.server-DVmQ-msp.js";
+import "./orders.server-CpHfpmGw.js";
+const requestBackInStock = createServerFn({
+  method: "POST"
+}).inputValidator(object({
+  slug: string().min(1).max(120),
+  size: string().min(1).max(60),
+  email: string().email().max(200)
+})).handler(createSsrRpc("a3e16a209f42433c5051c4348b0a0f51912ea93ba633ed5bb1d9ea1f02fe9a48"));
 function ProductPage() {
   const {
     slug
@@ -63,10 +71,9 @@ function ProductPage() {
         }, children: "Select size" }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "sizes", children: p.sizes.map(([label, amt], i) => {
           const sSold = (availFor(label) ?? 1) <= 0;
-          return /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: `size${i === sizeIdx ? " sel" : ""}`, disabled: sSold, "aria-disabled": sSold, style: sSold ? {
-            opacity: 0.4
+          return /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", className: `size${i === sizeIdx ? " sel" : ""}${sSold ? " soldout" : ""}`, style: sSold ? {
+            opacity: 0.55
           } : void 0, onClick: () => {
-            if (sSold) return;
             setSizeIdx(i);
             setAdded(false);
           }, children: [
@@ -129,6 +136,7 @@ function ProductPage() {
         }, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { to: "/checkout", style: {
           color: "var(--gold)"
         }, children: "View cart & check out →" }) }) : null,
+        soldOut ? /* @__PURE__ */ jsxRuntimeExports.jsx(NotifyForm, { slug: p.slug, size: p.sizes[sizeIdx][0] }, p.sizes[sizeIdx][0]) : null,
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "meta", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("b", { children: "Certificate of Analysis" }),
@@ -162,6 +170,87 @@ function ProductPage() {
     }, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "kicker", children: "More from the cast" }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "cards", children: more.map((x) => /* @__PURE__ */ jsxRuntimeExports.jsx(ProductCard, { p: x }, x.slug)) })
   ] }) });
+}
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function NotifyForm({
+  slug,
+  size
+}) {
+  const [email, setEmail] = reactExports.useState("");
+  const [status, setStatus] = reactExports.useState("idle");
+  if (status === "done") {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { style: {
+      margin: "12px 0 0",
+      textAlign: "center",
+      fontSize: 13.5,
+      color: "var(--gold)",
+      fontWeight: 600
+    }, children: [
+      "✓ You're on the list — we'll email you the moment ",
+      size,
+      " is back."
+    ] });
+  }
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: {
+    marginTop: 12
+  }, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { style: {
+      margin: "0 0 8px",
+      fontSize: 13.5,
+      color: "var(--muted)"
+    }, children: [
+      "Out of stock. Get an email the moment ",
+      size,
+      " is back:"
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { style: {
+      display: "flex",
+      gap: 8
+    }, onSubmit: async (e) => {
+      e.preventDefault();
+      if (!EMAIL_RE.test(email)) {
+        setStatus("error");
+        return;
+      }
+      setStatus("sending");
+      try {
+        const r = await requestBackInStock({
+          data: {
+            slug,
+            size,
+            email
+          }
+        });
+        setStatus(r.ok ? "done" : "error");
+      } catch {
+        setStatus("error");
+      }
+    }, children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "email", required: true, value: email, onChange: (e) => {
+        setEmail(e.target.value);
+        if (status === "error") setStatus("idle");
+      }, placeholder: "you@email.com", "aria-label": `Email me when ${size} is back in stock`, style: {
+        flex: 1,
+        minWidth: 0,
+        padding: "12px 13px",
+        borderRadius: 8,
+        border: "1px solid var(--line)",
+        background: "var(--bg2)",
+        color: "var(--cream)",
+        fontSize: 14,
+        fontFamily: "inherit"
+      } }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: "btn ghost", style: {
+        flex: "0 0 auto",
+        padding: "12px 18px"
+      }, disabled: status === "sending", children: status === "sending" ? "…" : "Notify me" })
+    ] }),
+    status === "error" ? /* @__PURE__ */ jsxRuntimeExports.jsx("p", { style: {
+      margin: "8px 0 0",
+      fontSize: 12.5,
+      color: "var(--crimson)"
+    }, children: "Enter a valid email and try again." }) : null
+  ] });
 }
 export {
   ProductPage as component

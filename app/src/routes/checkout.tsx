@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteLayout } from "../components/site/Chrome";
 import { useCart, updateQty, removeLine } from "../lib/cart";
 import {
@@ -42,6 +42,18 @@ function Checkout() {
   const [loadingRates, setLoadingRates] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState("");
+  // Monotonic id of the latest rates request. Any address/cart change bumps it,
+  // so a response from an older request is dropped instead of being accepted.
+  const ratesReq = useRef(0);
+  // Id of the most recently *started* request — only its completion may end
+  // the loading state (a superseded request must not clear it early).
+  const ratesStarted = useRef(0);
+
+  useEffect(() => {
+    ratesReq.current += 1; // cart changed — any in-flight rates are stale
+    setRates(null);
+    setRateId("");
+  }, [lines]);
 
   const subtotal = subtotalCents(lines);
   const chosen = rates?.find((r) => r.rateId === rateId) ?? null;
@@ -56,6 +68,7 @@ function Checkout() {
 
   function setField(k: keyof Address, v: string) {
     setAddr((a) => ({ ...a, [k]: v }));
+    ratesReq.current += 1; // address changed — any in-flight rates are stale
     setRates(null); // address changed — force a fresh rate lookup
     setRateId("");
   }
@@ -65,6 +78,8 @@ function Checkout() {
     setLoadingRates(true);
     setRates(null);
     setRateId("");
+    const reqId = ++ratesReq.current;
+    ratesStarted.current = reqId;
     try {
       const res = await fetch("/api/checkout/rates", {
         method: "POST",
@@ -72,13 +87,15 @@ function Checkout() {
         body: JSON.stringify({ address: addr, items: lines }),
       });
       const data = await res.json();
+      if (reqId !== ratesReq.current) return; // stale — inputs changed meanwhile
       if (!res.ok) throw new Error(data.error || "Could not get shipping rates.");
       setRates(data.rates as RateOption[]);
       if (data.rates?.[0]) setRateId(data.rates[0].rateId);
     } catch (e) {
+      if (reqId !== ratesReq.current) return;
       setError(e instanceof Error ? e.message : "Could not get shipping rates.");
     } finally {
-      setLoadingRates(false);
+      if (reqId === ratesStarted.current) setLoadingRates(false);
     }
   }
 

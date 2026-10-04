@@ -25,13 +25,18 @@ const { Route } = await import("../checkout");
 const { addLine, updateQty, clearCart } = await import("../../lib/cart");
 const Checkout = (Route as unknown as { component: () => ReactNode }).component;
 
-type Deferred = { resolve: (rates: unknown[]) => void; body: string };
+type Deferred = {
+  resolve: (rates: unknown[]) => void;
+  fail: (status: number, error: string) => void;
+  reject: (err: Error) => void;
+  body: string;
+};
 const pending: Deferred[] = [];
 const realFetch = globalThis.fetch;
 
-function jsonResponse(data: unknown): Response {
+function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
-    status: 200,
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
@@ -51,10 +56,12 @@ beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   pending.length = 0;
   globalThis.fetch = ((_url: string, init?: RequestInit) =>
-    new Promise<Response>((resolve) => {
+    new Promise<Response>((resolve, reject) => {
       pending.push({
         body: String(init?.body),
         resolve: (rates) => resolve(jsonResponse({ rates })),
+        fail: (status, error) => resolve(jsonResponse({ error }, status)),
+        reject,
       });
     })) as typeof fetch;
   clearCart();
@@ -108,6 +115,19 @@ async function resolvePending(i: number, rates: unknown[]) {
     await Promise.resolve();
   });
 }
+async function failPending(i: number, status: number, error: string) {
+  await act(async () => {
+    pending[i].fail(status, error);
+    await Promise.resolve();
+  });
+}
+async function rejectPending(i: number, message: string) {
+  await act(async () => {
+    pending[i].reject(new Error(message));
+    await Promise.resolve();
+  });
+}
+const errorText = () => host.querySelector(".co-error")?.textContent ?? "";
 
 describe("checkout: stale shipping-rate responses", () => {
   test("fresh rates (no change in between) are accepted — baseline", async () => {
@@ -198,5 +218,128 @@ describe("checkout: stale shipping-rate responses", () => {
     expect(host.textContent).not.toContain("$5.00");
     expect(host.textContent).not.toContain("$8.00");
     expect(payButton().disabled).toBe(false);
+  });
+
+  test("unrelated storage event while in flight → quote is still accepted", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await act(async () => {
+      window.dispatchEvent(new StorageEvent("storage", { key: "am_age_ok", newValue: "1" }));
+    });
+    await resolvePending(0, [rate("r-fresh", 800)]);
+    expect(rateInputs().map((r) => r.checked)).toEqual([true]);
+    expect(payButton().disabled).toBe(false);
+  });
+
+  test("unrelated storage event after quote resolved → quote is kept", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await resolvePending(0, [rate("r-fresh", 800)]);
+    await act(async () => {
+      window.dispatchEvent(new StorageEvent("storage", { key: "am_age_ok", newValue: "1" }));
+      window.dispatchEvent(new StorageEvent("storage", { key: null }));
+    });
+    expect(rateInputs()).toHaveLength(1);
+    expect(payButton().disabled).toBe(false);
+    expect(host.textContent).toContain("$8.00");
+  });
+
+  test("cart write with unchanged contents → quote is kept", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await act(async () => updateQty("bpc-157", "5 mg", 1)); // same qty as before
+    await resolvePending(0, [rate("r-fresh", 800)]);
+    expect(rateInputs()).toHaveLength(1);
+    await act(async () => updateQty("bpc-157", "5 mg", 1));
+    expect(rateInputs()).toHaveLength(1);
+    expect(payButton().disabled).toBe(false);
+  });
+
+  test("already-resolved quote, then cart change → quote is cleared", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await resolvePending(0, [rate("r-fresh", 800)]);
+    expect(payButton().disabled).toBe(false);
+    await click(buttonByText("+")); // qty 1 → 2 via the UI
+    expect(rateInputs()).toHaveLength(0);
+    expect(payButton().disabled).toBe(true);
+    expect(host.textContent).not.toContain("$8.00");
+    expect(buttonByText("Get shipping rates").disabled).toBe(false);
+  });
+
+  test("stale HTTP-error response → no error shown, loading cleared", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await setInput(byPlaceholder("ZIP"), "78702");
+    await failPending(0, 422, "No shipping rates available for that address.");
+    expect(errorText()).toBe("");
+    expect(rateInputs()).toHaveLength(0);
+    expect(buttonByText("Get shipping rates").disabled).toBe(false);
+  });
+
+  test("stale rejected request → no error shown, loading cleared", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await act(async () => updateQty("bpc-157", "5 mg", 3));
+    await rejectPending(0, "network down");
+    expect(errorText()).toBe("");
+    expect(buttonByText("Get shipping rates").disabled).toBe(false);
+  });
+
+  test("current HTTP-error response → error shown, loading cleared, can retry", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await failPending(0, 502, "Carrier timeout.");
+    expect(errorText()).toBe("Carrier timeout.");
+    expect(rateInputs()).toHaveLength(0);
+    expect(payButton().disabled).toBe(true);
+    expect(buttonByText("Get shipping rates").disabled).toBe(false);
+    await click(buttonByText("Get shipping rates"));
+    expect(buttonByText("Getting rates").disabled).toBe(true);
+    await resolvePending(1, [rate("r-fresh", 800)]);
+    expect(errorText()).toBe("");
+    expect(rateInputs()).toHaveLength(1);
+    expect(payButton().disabled).toBe(false);
+  });
+
+  test("current rejected request → error shown, loading cleared", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await rejectPending(0, "network down");
+    expect(errorText()).toBe("network down");
+    expect(buttonByText("Get shipping rates").disabled).toBe(false);
+  });
+
+  test("cart write immediately before the response completes → quote dropped", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    // Outside act(): React's re-render (and the effect that bumps the request
+    // id) is deferred to a scheduler task, while the fetch continuation runs
+    // on microtasks first — exactly the window a cart write can land in.
+    const g = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    g.IS_REACT_ACT_ENVIRONMENT = false;
+    try {
+      updateQty("bpc-157", "5 mg", 2);
+      pending[0].resolve([rate("r-old", 800)]);
+      await new Promise((r) => setTimeout(r, 0));
+    } finally {
+      g.IS_REACT_ACT_ENVIRONMENT = true;
+    }
+    await act(async () => {});
+    expect(rateInputs()).toHaveLength(0);
+    expect(payButton().disabled).toBe(true);
+    expect(host.textContent).not.toContain("$8.00");
+  });
+
+  test("cart write immediately after the response completes → quote cleared", async () => {
+    await fillValidForm();
+    await click(buttonByText("Get shipping rates"));
+    await act(async () => {
+      pending[0].resolve([rate("r-old", 800)]);
+      await Promise.resolve();
+      updateQty("bpc-157", "5 mg", 2);
+    });
+    expect(rateInputs()).toHaveLength(0);
+    expect(payButton().disabled).toBe(true);
   });
 });

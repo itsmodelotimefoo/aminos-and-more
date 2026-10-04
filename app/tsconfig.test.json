@@ -1,0 +1,10 @@
+{
+  // Type-checks `bun test` files (bun:test, happy-dom). `bun test` itself only
+  // transpiles, so run `bun run typecheck:test` to actually check them.
+  "extends": "./tsconfig.json",
+  "include": ["src/**/__tests__/**/*.ts", "src/**/__tests__/**/*.tsx", "src/routeTree.gen.ts", "src/*.d.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "types": ["vite/client", "bun"]
+  }
+}

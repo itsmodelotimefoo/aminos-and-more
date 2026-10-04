@@ -49,11 +49,14 @@ function Checkout() {
   // the loading state (a superseded request must not clear it early).
   const ratesStarted = useRef(0);
 
+  // Invalidate on cart *contents*, not array identity: useCart re-reads a fresh
+  // array on every storage event, including ones for unrelated keys.
+  const cartKey = JSON.stringify(lines);
   useEffect(() => {
     ratesReq.current += 1; // cart changed — any in-flight rates are stale
     setRates(null);
     setRateId("");
-  }, [lines]);
+  }, [cartKey]);
 
   const subtotal = subtotalCents(lines);
   const chosen = rates?.find((r) => r.rateId === rateId) ?? null;

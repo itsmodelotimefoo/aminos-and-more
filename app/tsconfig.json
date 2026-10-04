@@ -1,6 +1,6 @@
 {
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "eslint.config.js"],
-  // `bun test` files (bun:test, happy-dom) are type-checked by bun, not tsc.
+  // `bun test` files need bun:test types; they are checked by tsconfig.test.json.
   "exclude": ["src/**/__tests__/**"],
   "compilerOptions": {
     "target": "ES2022",
